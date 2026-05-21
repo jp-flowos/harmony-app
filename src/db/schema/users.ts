@@ -1,9 +1,9 @@
 import { pgTable, text, timestamp, boolean, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
 
-export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "premium"]);
-export const verificationTypeEnum = pgEnum("verification_type", ["real_name", "face", "activity", "review"]);
+export const subscriptionTierEnum = pgEnum("h_subscription_tier", ["free", "premium"]);
+export const verificationTypeEnum = pgEnum("h_verification_type", ["real_name", "face", "activity", "review"]);
 
-export const profiles = pgTable("profiles", {
+export const profiles = pgTable("h_profiles", {
   id: text("id").primaryKey(), // Supabase auth user id
   nickname: text("nickname").notNull(),
   birthYear: integer("birth_year"),
@@ -18,19 +18,19 @@ export const profiles = pgTable("profiles", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const hobbies = pgTable("hobbies", {
+export const hobbies = pgTable("h_hobbies", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   category: text("category").notNull(),
   icon: text("icon"),
 });
 
-export const userHobbies = pgTable("user_hobbies", {
+export const userHobbies = pgTable("h_user_hobbies", {
   userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
   hobbyId: text("hobby_id").references(() => hobbies.id, { onDelete: "cascade" }),
 });
 
-export const verificationBadges = pgTable("verification_badges", {
+export const verificationBadges = pgTable("h_verification_badges", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
   type: verificationTypeEnum("type").notNull(),

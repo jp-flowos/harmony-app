@@ -2,8 +2,8 @@ import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { profiles } from "./users";
 import { clubs } from "./clubs";
 
-export const chatRoomTypeEnum = pgEnum("chat_room_type", ["club", "private", "open"]);
-export const chatRequestStatusEnum = pgEnum("chat_request_status", [
+export const chatRoomTypeEnum = pgEnum("h_chat_room_type", ["club", "private", "open"]);
+export const chatRequestStatusEnum = pgEnum("h_chat_request_status", [
   "pending",
   "accepted",
   "rejected",
@@ -11,7 +11,7 @@ export const chatRequestStatusEnum = pgEnum("chat_request_status", [
 ]);
 
 // Supabase: 메타데이터만 저장 (실제 메시지는 Firebase)
-export const chatRooms = pgTable("chat_rooms", {
+export const chatRooms = pgTable("h_chat_rooms", {
   id: text("id").primaryKey(),
   type: chatRoomTypeEnum("type").notNull(),
   name: text("name"),
@@ -21,7 +21,7 @@ export const chatRooms = pgTable("chat_rooms", {
   firebaseRoomId: text("firebase_room_id"), // Firebase 채팅방 ID 연결
 });
 
-export const chatRoomMembers = pgTable("chat_room_members", {
+export const chatRoomMembers = pgTable("h_chat_room_members", {
   roomId: text("room_id").references(() => chatRooms.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
   joinedAt: timestamp("joined_at").defaultNow(),
@@ -29,7 +29,7 @@ export const chatRoomMembers = pgTable("chat_room_members", {
 });
 
 // 1:1 채팅 요청
-export const chatRequests = pgTable("chat_requests", {
+export const chatRequests = pgTable("h_chat_requests", {
   id: text("id").primaryKey(),
   fromUser: text("from_user").references(() => profiles.id),
   toUser: text("to_user").references(() => profiles.id),

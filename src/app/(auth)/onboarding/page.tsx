@@ -146,10 +146,10 @@ export default function OnboardingPage() {
               </div>
             ))}
             <div className="flex gap-2 pt-4">
-              <Button variant="ghost" className="flex-1" onClick={() => router.push("/")}>
+              <Button variant="ghost" className="flex-1" onClick={() => router.push("/club")}>
                 건너뛰기
               </Button>
-              <Button className="flex-1" size="lg" onClick={() => router.push("/")}>
+              <Button className="flex-1" size="lg" onClick={() => router.push("/club")}>
                 완료
               </Button>
             </div>

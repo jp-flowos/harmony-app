@@ -3,7 +3,7 @@ import { profiles } from "./users";
 
 export const placeCategoryEnum = ["cafe", "park", "golf", "culture", "hospital", "restaurant", "user"] as const;
 
-export const places = pgTable("places", {
+export const places = pgTable("h_places", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   category: text("category").notNull(),

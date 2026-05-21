@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { profiles } from "./users";
 
-export const activityTypeEnum = pgEnum("activity_type", [
+export const activityTypeEnum = pgEnum("h_activity_type", [
   "join_club",
   "create_meeting",
   "join_meeting",
@@ -10,7 +10,7 @@ export const activityTypeEnum = pgEnum("activity_type", [
   "write_comment",
 ]);
 
-export const userFollows = pgTable("user_follows", {
+export const userFollows = pgTable("h_user_follows", {
   followerId: text("follower_id")
     .references(() => profiles.id, { onDelete: "cascade" })
     .notNull(),
@@ -20,7 +20,7 @@ export const userFollows = pgTable("user_follows", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const activityFeed = pgTable("activity_feed", {
+export const activityFeed = pgTable("h_activity_feed", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .references(() => profiles.id, { onDelete: "cascade" })

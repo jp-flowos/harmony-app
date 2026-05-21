@@ -1,17 +1,58 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChatCircle, Envelope } from "@phosphor-icons/react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<"social" | "email">("social");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message === "Invalid login credentials"
+          ? "이메일 또는 비밀번호가 올바르지 않습니다."
+          : error.message);
+        return;
+      }
+
+      router.push("/club");
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKakaoLogin = async () => {
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "kakao",
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+  };
 
   return (
     <Card>
@@ -19,9 +60,20 @@ export default function LoginPage() {
         <CardTitle className="text-center text-2xl">로그인</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {error && (
+          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
         {mode === "social" ? (
           <>
-            <Button variant="kakao" className="w-full" size="lg">
+            <Button
+              variant="kakao"
+              className="w-full"
+              size="lg"
+              onClick={handleKakaoLogin}
+            >
               <ChatCircle size={24} weight="fill" />
               카카오로 시작하기
             </Button>
@@ -33,13 +85,18 @@ export default function LoginPage() {
                 <span className="bg-white px-4 text-gray-400">또는</span>
               </div>
             </div>
-            <Button variant="outline" className="w-full" size="lg" onClick={() => setMode("email")}>
+            <Button
+              variant="outline"
+              className="w-full"
+              size="lg"
+              onClick={() => setMode("email")}
+            >
               <Envelope size={24} />
               이메일로 로그인
             </Button>
           </>
         ) : (
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-4" onSubmit={handleEmailLogin}>
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
               <Input
@@ -48,6 +105,7 @@ export default function LoginPage() {
                 placeholder="이메일 주소"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
             <div className="space-y-2">
@@ -58,10 +116,11 @@ export default function LoginPage() {
                 placeholder="비밀번호"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </div>
-            <Button className="w-full" size="lg" type="submit">
-              로그인
+            <Button className="w-full" size="lg" type="submit" disabled={loading}>
+              {loading ? "로그인 중..." : "로그인"}
             </Button>
             <Button variant="ghost" className="w-full" onClick={() => setMode("social")}>
               다른 방법으로 로그인

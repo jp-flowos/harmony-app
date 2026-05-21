@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import { profiles } from "./users";
 
-export const infoCategoryEnum = pgEnum("info_category", [
+export const infoCategoryEnum = pgEnum("h_info_category", [
   "health",
   "finance",
   "travel",
@@ -9,7 +9,7 @@ export const infoCategoryEnum = pgEnum("info_category", [
   "gov",
 ]);
 
-export const communityCategoryEnum = pgEnum("community_category", [
+export const communityCategoryEnum = pgEnum("h_community_category", [
   "free",
   "health",
   "travel",
@@ -19,7 +19,7 @@ export const communityCategoryEnum = pgEnum("community_category", [
 ]);
 
 // 운세
-export const fortuneMaster = pgTable("fortune_master", {
+export const fortuneMaster = pgTable("h_fortune_master", {
   id: text("id").primaryKey(),
   date: text("date").notNull(), // YYYY-MM-DD
   zodiac: text("zodiac").notNull(), // 쥐/소/호랑이/...
@@ -29,7 +29,7 @@ export const fortuneMaster = pgTable("fortune_master", {
   relationContent: text("relation_content"),
 });
 
-export const fortuneComments = pgTable("fortune_comments", {
+export const fortuneComments = pgTable("h_fortune_comments", {
   id: text("id").primaryKey(),
   fortuneId: text("fortune_id").references(() => fortuneMaster.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => profiles.id),
@@ -39,7 +39,7 @@ export const fortuneComments = pgTable("fortune_comments", {
 });
 
 // 정보 콘텐츠
-export const infoContents = pgTable("info_contents", {
+export const infoContents = pgTable("h_info_contents", {
   id: text("id").primaryKey(),
   category: infoCategoryEnum("category").notNull(),
   title: text("title").notNull(),
@@ -52,7 +52,7 @@ export const infoContents = pgTable("info_contents", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const infoComments = pgTable("info_comments", {
+export const infoComments = pgTable("h_info_comments", {
   id: text("id").primaryKey(),
   contentId: text("content_id").references(() => infoContents.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => profiles.id),
@@ -61,7 +61,7 @@ export const infoComments = pgTable("info_comments", {
 });
 
 // 커뮤니티
-export const communityPosts = pgTable("community_posts", {
+export const communityPosts = pgTable("h_community_posts", {
   id: text("id").primaryKey(),
   category: communityCategoryEnum("category").notNull(),
   userId: text("user_id").references(() => profiles.id),
@@ -75,13 +75,13 @@ export const communityPosts = pgTable("community_posts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const communityLikes = pgTable("community_likes", {
+export const communityLikes = pgTable("h_community_likes", {
   postId: text("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const communityComments = pgTable("community_comments", {
+export const communityComments = pgTable("h_community_comments", {
   id: text("id").primaryKey(),
   postId: text("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => profiles.id),
