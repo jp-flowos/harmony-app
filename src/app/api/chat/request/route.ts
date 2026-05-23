@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, errorResponse } from "@/lib/api-utils";
+import type { NextRequest } from "next/server";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 
 // POST /api/chat/request - 1:1 채팅 요청
 export async function POST(request: NextRequest) {

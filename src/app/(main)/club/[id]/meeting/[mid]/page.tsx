@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { ArrowLeft, CalendarDots, Camera, MapPin, Star, Users } from "@phosphor-icons/react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDots, MapPin, Users, ArrowLeft, Star, Camera } from "@phosphor-icons/react";
-import Link from "next/link";
 
 const meetingData = {
   title: "3월 정기 산행",
@@ -36,11 +36,33 @@ interface Review {
 }
 
 const sampleReviews: Review[] = [
-  { id: "r1", author: "산사랑", rating: 5, content: "정말 좋은 산행이었습니다! 다음에도 꼭 참여하고 싶어요.", date: "2024-03-16", images: [] },
-  { id: "r2", author: "건강한인생", rating: 4, content: "코스가 적당히 힘들고 좋았어요. 점심도 맛있었습니다.", date: "2024-03-16", images: [] },
+  {
+    id: "r1",
+    author: "산사랑",
+    rating: 5,
+    content: "정말 좋은 산행이었습니다! 다음에도 꼭 참여하고 싶어요.",
+    date: "2024-03-16",
+    images: [],
+  },
+  {
+    id: "r2",
+    author: "건강한인생",
+    rating: 4,
+    content: "코스가 적당히 힘들고 좋았어요. 점심도 맛있었습니다.",
+    date: "2024-03-16",
+    images: [],
+  },
 ];
 
-function StarRating({ rating, onRate, interactive = false }: { rating: number; onRate?: (r: number) => void; interactive?: boolean }) {
+function StarRating({
+  rating,
+  onRate,
+  interactive = false,
+}: {
+  rating: number;
+  onRate?: (r: number) => void;
+  interactive?: boolean;
+}) {
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((i) => (
@@ -62,7 +84,11 @@ function StarRating({ rating, onRate, interactive = false }: { rating: number; o
   );
 }
 
-function ReviewForm({ onSubmit }: { onSubmit: (review: { rating: number; content: string }) => void }) {
+function ReviewForm({
+  onSubmit,
+}: {
+  onSubmit: (review: { rating: number; content: string }) => void;
+}) {
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState("");
 
@@ -89,7 +115,8 @@ function ReviewForm({ onSubmit }: { onSubmit: (review: { rating: number; content
         />
         <div className="flex items-center justify-between">
           <Button variant="outline" size="sm">
-            <Camera size={16} className="mr-1" />사진 첨부
+            <Camera size={16} className="mr-1" />
+            사진 첨부
           </Button>
           <Button size="sm" onClick={handleSubmit} disabled={rating === 0 || !content.trim()}>
             후기 등록
@@ -105,7 +132,8 @@ export default function MeetingDetailPage() {
   const [joined, setJoined] = useState(false);
   const [reviews, setReviews] = useState<Review[]>(sampleReviews);
 
-  const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
+  const avgRating =
+    reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
 
   const handleReviewSubmit = (review: { rating: number; content: string }) => {
     setReviews([
@@ -123,7 +151,10 @@ export default function MeetingDetailPage() {
 
   return (
     <div className="space-y-4 p-4">
-      <Link href={`/club/${params.id}`} className="inline-flex items-center gap-1 text-base text-gray-500 hover:text-gray-700">
+      <Link
+        href={`/club/${params.id}`}
+        className="inline-flex items-center gap-1 text-base text-gray-500 hover:text-gray-700"
+      >
         <ArrowLeft size={20} />
         클럽으로 돌아가기
       </Link>
@@ -132,7 +163,9 @@ export default function MeetingDetailPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl">{meetingData.title}</CardTitle>
-            <Badge>{meetingData.currentCount}/{meetingData.maxParticipants}명</Badge>
+            <Badge>
+              {meetingData.currentCount}/{meetingData.maxParticipants}명
+            </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

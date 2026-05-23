@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, errorResponse } from "@/lib/api-utils";
+import type { NextRequest } from "next/server";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 
 interface PostComment {
   id: string;
@@ -11,18 +11,12 @@ interface PostComment {
 
 const commentsStore: PostComment[] = [];
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   return jsonResponse(commentsStore.filter((c) => c.postId === id));
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = (await request.json()) as Record<string, unknown>;
   const content = body.content as string | undefined;

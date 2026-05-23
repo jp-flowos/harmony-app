@@ -1,7 +1,18 @@
 // Deterministic fortune generation based on date + zodiac (no external API)
 
 const ZODIAC_ANIMALS = [
-  "쥐", "소", "호랑이", "토끼", "용", "뱀", "말", "양", "원숭이", "닭", "개", "돼지",
+  "쥐",
+  "소",
+  "호랑이",
+  "토끼",
+  "용",
+  "뱀",
+  "말",
+  "양",
+  "원숭이",
+  "닭",
+  "개",
+  "돼지",
 ] as const;
 
 export type ZodiacAnimal = (typeof ZODIAC_ANIMALS)[number];
@@ -106,9 +117,18 @@ export function generateFortune(date: string, zodiac: ZodiacAnimal): FortuneResu
 
 export function getZodiacEmoji(zodiac: ZodiacAnimal): string {
   const map: Record<ZodiacAnimal, string> = {
-    "쥐": "🐭", "소": "🐂", "호랑이": "🐯", "토끼": "🐰",
-    "용": "🐉", "뱀": "🐍", "말": "🐴", "양": "🐑",
-    "원숭이": "🐵", "닭": "🐔", "개": "🐶", "돼지": "🐷",
+    쥐: "🐭",
+    소: "🐂",
+    호랑이: "🐯",
+    토끼: "🐰",
+    용: "🐉",
+    뱀: "🐍",
+    말: "🐴",
+    양: "🐑",
+    원숭이: "🐵",
+    닭: "🐔",
+    개: "🐶",
+    돼지: "🐷",
   };
   return map[zodiac] ?? "🔮";
 }

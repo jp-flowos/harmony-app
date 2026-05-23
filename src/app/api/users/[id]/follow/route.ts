@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { successResponse, unauthorizedError, notFoundError, serverError } from "@/lib/api-response";
+import type { NextRequest } from "next/server";
+import { serverError, successResponse, unauthorizedError } from "@/lib/api-response";
 
 interface FollowState {
   followerId: string;
@@ -9,10 +9,7 @@ interface FollowState {
 // In-memory mock — in production, use DB (user_follows table)
 const follows: FollowState[] = [];
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: targetUserId } = await params;
 
@@ -44,10 +41,7 @@ export async function POST(
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: userId } = await params;
 

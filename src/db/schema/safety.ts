@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { profiles } from "./users";
 
 export const reportTargetTypeEnum = pgEnum("h_report_target_type", [

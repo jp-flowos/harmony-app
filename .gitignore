@@ -40,6 +40,10 @@ next-env.d.ts
 
 # drizzle
 /drizzle
+supabase/.temp/
 
 # playwright mcp debug artifacts
 /.playwright-mcp
+
+# local db/project backups (other projects' dumps, not for this repo)
+/backups

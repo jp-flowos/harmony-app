@@ -1,21 +1,15 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, notFound, errorResponse } from "@/lib/api-utils";
+import type { NextRequest } from "next/server";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 
 // GET /api/clubs/[id] - 클럽 상세
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   // TODO: DB query
   return jsonResponse({ id, message: "클럽 상세 (TODO)" });
 }
 
 // PATCH /api/clubs/[id] - 클럽 수정
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
     const body = await request.json();

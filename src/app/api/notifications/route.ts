@@ -1,7 +1,7 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, errorResponse } from "@/lib/api-utils";
-import type { PushSubscription, NotificationPayload } from "@/lib/notifications";
-import { sendBulkNotification, DEFAULT_NOTIFICATION_SETTINGS } from "@/lib/notifications";
+import type { NextRequest } from "next/server";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
+import type { NotificationPayload, PushSubscription } from "@/lib/notifications";
+import { DEFAULT_NOTIFICATION_SETTINGS, sendBulkNotification } from "@/lib/notifications";
 
 // In-memory store (would use DB)
 const subscriptions: PushSubscription[] = [];

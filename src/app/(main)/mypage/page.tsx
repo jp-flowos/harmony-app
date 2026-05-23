@@ -1,28 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
-  UserCircle,
-  ShieldCheck,
+  Bell,
+  CalendarDots,
+  CaretRight,
   Crown,
   Gear,
-  SignOut,
-  CaretRight,
-  PencilSimple,
   Heart,
+  PencilSimple,
+  ShieldCheck,
+  SignOut,
   Star,
-  CalendarDots,
-  Bell,
-  BellSlash,
+  UserCircle,
 } from "@phosphor-icons/react";
+import Link from "next/link";
+import { useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const profileData = {
   nickname: "활기찬시니어",
@@ -50,19 +48,45 @@ const myClubs = [
 ];
 
 const myMeetings = [
-  { id: "m1", title: "3월 정기 산행", clubName: "서울 등산 모임", date: "2024-03-15", status: "upcoming" as const },
-  { id: "m2", title: "2월 독서 모임", clubName: "독서 클럽", date: "2024-02-20", status: "completed" as const },
+  {
+    id: "m1",
+    title: "3월 정기 산행",
+    clubName: "서울 등산 모임",
+    date: "2024-03-15",
+    status: "upcoming" as const,
+  },
+  {
+    id: "m2",
+    title: "2월 독서 모임",
+    clubName: "독서 클럽",
+    date: "2024-02-20",
+    status: "completed" as const,
+  },
 ];
 
 const myReviews = [
-  { id: "r1", meetingTitle: "2월 산행", rating: 5, content: "최고의 산행이었습니다!", date: "2024-02-18" },
-  { id: "r2", meetingTitle: "1월 독서 모임", rating: 4, content: "유익한 시간이었어요", date: "2024-01-20" },
+  {
+    id: "r1",
+    meetingTitle: "2월 산행",
+    rating: 5,
+    content: "최고의 산행이었습니다!",
+    date: "2024-02-18",
+  },
+  {
+    id: "r2",
+    meetingTitle: "1월 독서 모임",
+    rating: 4,
+    content: "유익한 시간이었어요",
+    date: "2024-01-20",
+  },
 ];
 
 const myFavorites = [
   { id: "f1", name: "북한산 둘레길", type: "장소" },
   { id: "f2", name: "서울 등산 모임", type: "클럽" },
 ];
+
+const ratingStars = [1, 2, 3, 4, 5] as const;
 
 export default function MyPage() {
   const [notifications, setNotifications] = useState({
@@ -96,11 +120,14 @@ export default function MyPage() {
                 <h2 className="text-xl font-bold text-gray-900">{profileData.nickname}</h2>
                 {profileData.isPremium && (
                   <Badge className="bg-orange-500 text-white">
-                    <Crown size={12} weight="fill" className="mr-1" />프리미엄
+                    <Crown size={12} weight="fill" className="mr-1" />
+                    프리미엄
                   </Badge>
                 )}
               </div>
-              <p className="text-base text-gray-500">{profileData.region} · {profileData.bio}</p>
+              <p className="text-base text-gray-500">
+                {profileData.region} · {profileData.bio}
+              </p>
               <div className="mt-2 flex gap-2">
                 <Badge variant="success">
                   <ShieldCheck size={14} className="mr-1" /> 인증됨
@@ -174,10 +201,15 @@ export default function MyPage() {
             <TabsContent value="meetings" className="space-y-2 mt-3">
               {myMeetings.map((meeting) => (
                 <div key={meeting.id} className="flex items-center gap-3 rounded-xl p-3">
-                  <CalendarDots size={24} className={meeting.status === "upcoming" ? "text-orange-500" : "text-gray-400"} />
+                  <CalendarDots
+                    size={24}
+                    className={meeting.status === "upcoming" ? "text-orange-500" : "text-gray-400"}
+                  />
                   <div className="flex-1">
                     <p className="text-base font-medium text-gray-900">{meeting.title}</p>
-                    <p className="text-sm text-gray-400">{meeting.clubName} · {meeting.date}</p>
+                    <p className="text-sm text-gray-400">
+                      {meeting.clubName} · {meeting.date}
+                    </p>
                   </div>
                   <Badge variant={meeting.status === "upcoming" ? "default" : "secondary"}>
                     {meeting.status === "upcoming" ? "예정" : "완료"}
@@ -192,8 +224,13 @@ export default function MyPage() {
                   <div className="flex items-center gap-2">
                     <p className="text-base font-medium text-gray-900">{review.meetingTitle}</p>
                     <div className="flex">
-                      {Array.from({ length: review.rating }).map((_, i) => (
-                        <Star key={`star-${review.id}-${i}`} size={14} weight="fill" className="text-yellow-400" />
+                      {ratingStars.slice(0, review.rating).map((star) => (
+                        <Star
+                          key={`star-${review.id}-${star}`}
+                          size={14}
+                          weight="fill"
+                          className="text-yellow-400"
+                        />
                       ))}
                     </div>
                   </div>
@@ -226,12 +263,12 @@ export default function MyPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {([
+          {[
             { key: "chat" as const, label: "채팅 알림", desc: "새 메시지 알림" },
             { key: "meeting" as const, label: "모임 알림", desc: "모임 일정 리마인더" },
             { key: "club" as const, label: "클럽 알림", desc: "클럽 새 글/공지" },
             { key: "marketing" as const, label: "마케팅 알림", desc: "이벤트 및 혜택 안내" },
-          ]).map((item) => (
+          ].map((item) => (
             <div key={item.key} className="flex items-center justify-between">
               <div>
                 <Label className="text-base">{item.label}</Label>
@@ -251,11 +288,13 @@ export default function MyPage() {
       {/* Menu */}
       <Card>
         <CardContent className="p-0">
-          {([
-            { label: "프로필 수정", icon: UserCircle, href: "/mypage/edit" },
-            { label: "구독 관리", icon: Crown, href: "/subscribe" },
-            { label: "설정", icon: Gear, href: "/mypage/settings" },
-          ] as const).map((item) => {
+          {(
+            [
+              { label: "프로필 수정", icon: UserCircle, href: "/mypage/edit" },
+              { label: "구독 관리", icon: Crown, href: "/subscribe" },
+              { label: "설정", icon: Gear, href: "/mypage/settings" },
+            ] as const
+          ).map((item) => {
             const Icon = item.icon;
             return (
               <Link

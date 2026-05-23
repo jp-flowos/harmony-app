@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -16,7 +16,11 @@ interface KakaoNamespace {
     Marker: new (options: MarkerOptions) => KakaoMarker;
     InfoWindow: new (options: InfoWindowOptions) => KakaoInfoWindow;
     event: {
-      addListener: (target: KakaoMarker | KakaoMapInstance, type: string, handler: () => void) => void;
+      addListener: (
+        target: KakaoMarker | KakaoMapInstance,
+        type: string,
+        handler: () => void
+      ) => void;
     };
     services: {
       Places: new () => KakaoPlaces;
@@ -70,7 +74,10 @@ interface PlaceResult {
 }
 
 interface KakaoPlaces {
-  keywordSearch: (keyword: string, callback: (result: PlaceResult[], status: string) => void) => void;
+  keywordSearch: (
+    keyword: string,
+    callback: (result: PlaceResult[], status: string) => void
+  ) => void;
 }
 
 export interface MapPlace {
@@ -164,7 +171,9 @@ export function KakaoMap({ places = [], onPlaceClick, center, className }: Kakao
 
   if (error) {
     return (
-      <div className={`flex items-center justify-center rounded-2xl bg-gray-100 ${className ?? "h-80"}`}>
+      <div
+        className={`flex items-center justify-center rounded-2xl bg-gray-100 ${className ?? "h-80"}`}
+      >
         <p className="text-sm text-gray-500">{error}</p>
       </div>
     );

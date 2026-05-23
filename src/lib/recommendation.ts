@@ -35,17 +35,6 @@ const WEIGHTS = {
   popularityBonus: 5,
 } as const;
 
-function getAgeGroup(birthYear: number | null): string {
-  if (!birthYear) return "unknown";
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - birthYear;
-  if (age < 55) return "under55";
-  if (age < 60) return "55-59";
-  if (age < 65) return "60-64";
-  if (age < 70) return "65-69";
-  return "70plus";
-}
-
 /**
  * 콘텐츠 기반 필터링: 사용자 프로필과 클럽 속성 비교
  */
@@ -157,7 +146,10 @@ export function scoreInfoContents(
 
     // 태그 매칭
     const tagOverlap = content.tags.filter((t) =>
-      userHobbies.some((h) => h.toLowerCase().includes(t.toLowerCase()) || t.toLowerCase().includes(h.toLowerCase()))
+      userHobbies.some(
+        (h) =>
+          h.toLowerCase().includes(t.toLowerCase()) || t.toLowerCase().includes(h.toLowerCase())
+      )
     );
     if (tagOverlap.length > 0) {
       score += 30 * tagOverlap.length;

@@ -10,11 +10,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "userId와 nickname이 필요합니다." }, { status: 400 });
     }
 
-    await db.insert(profiles).values({
-      id: userId,
-      nickname,
-      region: "서울",
-    }).onConflictDoNothing();
+    await db
+      .insert(profiles)
+      .values({
+        id: userId,
+        nickname,
+        region: "서울",
+      })
+      .onConflictDoNothing();
 
     return NextResponse.json({ success: true });
   } catch (error) {

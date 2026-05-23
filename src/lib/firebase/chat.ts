@@ -2,7 +2,7 @@
  * 채팅 추상화 인터페이스
  * Firebase 의존성을 이 파일로 격리 → 이관 시 내부만 교체
  */
-import { ref, push, onValue, off, serverTimestamp, query, limitToLast } from "firebase/database";
+import { limitToLast, off, onValue, push, query, ref, serverTimestamp } from "firebase/database";
 import { getFirebaseDb } from "./client";
 
 export interface ChatMessage {

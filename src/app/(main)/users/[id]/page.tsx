@@ -1,27 +1,38 @@
 "use client";
 
-import { useState, use } from "react";
+import {
+  CalendarDots,
+  ChatCircle,
+  Heart,
+  MapPin,
+  UserMinus,
+  UserPlus,
+  UsersThree,
+} from "@phosphor-icons/react";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
+import { use, useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MapPin, CalendarDots, Heart, UserPlus, UserMinus, UsersThree, ChatCircle } from "@phosphor-icons/react";
+import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 
 // Mock user profiles
-const mockProfiles: Record<string, {
-  id: string;
-  nickname: string;
-  region: string;
-  bio: string;
-  hobbies: string[];
-  clubCount: number;
-  reviewCount: number;
-  isVerified: boolean;
-  joinedDate: string;
-  activities: Array<{ id: string; type: string; title: string; date: string }>;
-}> = {
+const mockProfiles: Record<
+  string,
+  {
+    id: string;
+    nickname: string;
+    region: string;
+    bio: string;
+    hobbies: string[];
+    clubCount: number;
+    reviewCount: number;
+    isVerified: boolean;
+    joinedDate: string;
+    activities: Array<{ id: string; type: string; title: string; date: string }>;
+  }
+> = {
   user1: {
     id: "user1",
     nickname: "산사랑",
@@ -96,9 +107,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-gray-900">{profile.nickname}</h1>
-                {profile.isVerified && (
-                  <Badge className="bg-blue-100 text-blue-700">인증됨</Badge>
-                )}
+                {profile.isVerified && <Badge className="bg-blue-100 text-blue-700">인증됨</Badge>}
               </div>
               <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
                 <MapPin size={14} />
@@ -173,14 +182,20 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <Card key={activity.id}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                  {activity.type === "모임 참여" && <UsersThree size={18} className="text-blue-500" />}
+                  {activity.type === "모임 참여" && (
+                    <UsersThree size={18} className="text-blue-500" />
+                  )}
                   {activity.type === "후기 작성" && <Heart size={18} className="text-red-500" />}
-                  {activity.type === "클럽 가입" && <UsersThree size={18} className="text-orange-500" />}
+                  {activity.type === "클럽 가입" && (
+                    <UsersThree size={18} className="text-orange-500" />
+                  )}
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{activity.title}</p>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Badge variant="outline" className="text-xs">{activity.type}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {activity.type}
+                    </Badge>
                     <span className="flex items-center gap-1">
                       <CalendarDots size={10} /> {activity.date}
                     </span>
@@ -192,9 +207,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
         </div>
 
         {/* Joined Date */}
-        <p className="mt-4 text-center text-xs text-gray-400">
-          {profile.joinedDate} 가입
-        </p>
+        <p className="mt-4 text-center text-xs text-gray-400">{profile.joinedDate} 가입</p>
       </section>
     </div>
   );

@@ -1,19 +1,80 @@
 @import "tailwindcss";
 
+/* Pretendard (Korean-optimized typeface) is loaded via <link> in layout.tsx */
+
+/* ============================================
+ * Senior-First Design Tokens
+ * See design.md for full rationale.
+ * ============================================ */
 :root {
+  /* Force light scheme — high-contrast dark text on white is best for 노안 */
+  color-scheme: light;
+
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111827; /* gray-900, 17.74:1 contrast */
+
+  /* Senior baseline font size: 18px (Tailwind default is 16px) */
+  font-size: 18px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    "Pretendard Variable",
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    system-ui,
+    sans-serif;
+  font-feature-settings: "ss06" on; /* Pretendard: more legible 한글 strokes */
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Italic forbidden for Korean — explicit reset just in case */
+  font-style: normal;
+}
+
+/* Native inputs must inherit the senior-friendly typography */
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Form fields: ensure the typed text is dark and readable */
+input,
+textarea,
+select {
+  color: #111827; /* gray-900 — overrides browser UA stylesheet on iOS/Safari */
+}
+
+/* Larger focus ring helps seniors locate the cursor */
+*:focus-visible {
+  outline: 3px solid #fb923c; /* orange-400 */
+  outline-offset: 2px;
+}
+
+/* Respect users who set OS-level reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile safe area (iOS notch / home indicator) for fixed bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }

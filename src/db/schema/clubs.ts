@@ -1,12 +1,15 @@
-import { pgTable, text, timestamp, boolean, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
-import { profiles } from "./users";
+import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { places } from "./places";
+import { profiles } from "./users";
 
 export const joinTypeEnum = pgEnum("h_join_type", ["open", "approval"]);
 export const memberRoleEnum = pgEnum("h_member_role", ["owner", "admin", "member"]);
 export const memberStatusEnum = pgEnum("h_member_status", ["active", "banned"]);
 export const postTypeEnum = pgEnum("h_post_type", ["general", "notice", "review", "photo"]);
-export const meetingParticipantStatusEnum = pgEnum("h_meeting_participant_status", ["joined", "cancelled"]);
+export const meetingParticipantStatusEnum = pgEnum("h_meeting_participant_status", [
+  "joined",
+  "cancelled",
+]);
 
 export const clubs = pgTable("h_clubs", {
   id: text("id").primaryKey(),

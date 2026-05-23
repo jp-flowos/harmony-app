@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChatCircle, ClockCounterClockwise, ShareNetwork, Star } from "@phosphor-icons/react";
+import { useCallback, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Star, ShareNetwork, ChatCircle, ClockCounterClockwise } from "@phosphor-icons/react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  type FortuneResult,
   generateFortune,
-  getZodiacFromBirthYear,
   getZodiacEmoji,
   ZODIAC_ANIMALS,
   type ZodiacAnimal,
-  type FortuneResult,
 } from "@/lib/fortune";
+
+const SCORE_STARS = [1, 2, 3, 4, 5] as const;
 
 function getToday(): string {
   return new Date().toISOString().slice(0, 10);
@@ -33,12 +34,12 @@ function getLast7Days(): string[] {
 function ScoreStars({ score }: { score: number }) {
   return (
     <div className="flex gap-0.5">
-      {Array.from({ length: 5 }, (_, i) => (
+      {SCORE_STARS.map((star) => (
         <Star
-          key={i}
+          key={star}
           size={20}
-          weight={i < score ? "fill" : "regular"}
-          className={i < score ? "text-yellow-400" : "text-gray-300"}
+          weight={star <= score ? "fill" : "regular"}
+          className={star <= score ? "text-yellow-400" : "text-gray-300"}
         />
       ))}
     </div>
@@ -66,16 +67,24 @@ function FortuneCard({ fortune }: { fortune: FortuneResult }) {
           <p className="text-base text-gray-700">{fortune.general}</p>
         </div>
         <div>
-          <Badge variant="secondary" className="mb-2">건강운</Badge>
+          <Badge variant="secondary" className="mb-2">
+            건강운
+          </Badge>
           <p className="text-base text-gray-700">{fortune.health}</p>
         </div>
         <div>
-          <Badge variant="secondary" className="mb-2">금전운</Badge>
+          <Badge variant="secondary" className="mb-2">
+            금전운
+          </Badge>
           <p className="text-base text-gray-700">{fortune.money}</p>
         </div>
         <div className="flex gap-4 text-sm text-gray-500">
-          <span>행운의 색: <strong className="text-gray-700">{fortune.luckyColor}</strong></span>
-          <span>행운의 숫자: <strong className="text-gray-700">{fortune.luckyNumber}</strong></span>
+          <span>
+            행운의 색: <strong className="text-gray-700">{fortune.luckyColor}</strong>
+          </span>
+          <span>
+            행운의 숫자: <strong className="text-gray-700">{fortune.luckyNumber}</strong>
+          </span>
         </div>
       </CardContent>
     </Card>
@@ -94,11 +103,15 @@ export default function FortunePage() {
   const handleShare = useCallback(() => {
     // Kakao share placeholder
     if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({
-        title: `${fortune.zodiac}띠 오늘의 운세`,
-        text: fortune.general,
-        url: window.location.href,
-      }).catch(() => { /* user cancelled */ });
+      navigator
+        .share({
+          title: `${fortune.zodiac}띠 오늘의 운세`,
+          text: fortune.general,
+          url: window.location.href,
+        })
+        .catch(() => {
+          /* user cancelled */
+        });
     }
   }, [fortune]);
 
@@ -152,8 +165,18 @@ export default function FortunePage() {
             <CardContent className="space-y-3">
               <div className="space-y-2">
                 {[
-                  { id: "1", nickname: "행운이", text: "오늘 정말 좋은 일이 있었어요!", time: "2시간 전" },
-                  { id: "2", nickname: "산사랑", text: "산책 다녀왔더니 기분 좋네요", time: "5시간 전" },
+                  {
+                    id: "1",
+                    nickname: "행운이",
+                    text: "오늘 정말 좋은 일이 있었어요!",
+                    time: "2시간 전",
+                  },
+                  {
+                    id: "2",
+                    nickname: "산사랑",
+                    text: "산책 다녀왔더니 기분 좋네요",
+                    time: "5시간 전",
+                  },
                 ].map((c) => (
                   <div key={c.id} className="rounded-lg bg-gray-50 p-3">
                     <div className="flex items-center justify-between">
@@ -170,7 +193,9 @@ export default function FortunePage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                 />
-                <Button size="sm" onClick={() => setComment("")}>작성</Button>
+                <Button size="sm" onClick={() => setComment("")}>
+                  작성
+                </Button>
               </div>
             </CardContent>
           </Card>

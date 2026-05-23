@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, errorResponse } from "@/lib/api-utils";
+import type { NextRequest } from "next/server";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 
 // POST /api/payments - 결제 준비 (토스페이먼츠)
 export async function POST(request: NextRequest) {

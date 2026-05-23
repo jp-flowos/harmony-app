@@ -100,7 +100,8 @@ ${zodiac}띠를 위한 오늘의 운세를 작성해주세요.
 
 55-70세 시니어가 대상입니다. 따뜻하고 긍정적인 톤으로, 구체적인 조언을 포함해주세요.`;
 
-  const systemInstruction = "당신은 경험 많은 운세 전문가입니다. 시니어 대상으로 따뜻하고 실용적인 운세를 작성합니다.";
+  const systemInstruction =
+    "당신은 경험 많은 운세 전문가입니다. 시니어 대상으로 따뜻하고 실용적인 운세를 작성합니다.";
 
   const text = await callGemini(prompt, systemInstruction);
 
@@ -139,7 +140,8 @@ export async function generateInfoDraft(
 
 시니어가 이해하기 쉽게, 실생활에 도움되는 내용으로 작성해주세요.`;
 
-  const systemInstruction = "당신은 시니어 전문 콘텐츠 작성자입니다. 쉽고 친절한 문체를 사용합니다.";
+  const systemInstruction =
+    "당신은 시니어 전문 콘텐츠 작성자입니다. 쉽고 친절한 문체를 사용합니다.";
 
   const text = await callGemini(prompt, systemInstruction);
   const lines = text.split("\n");
@@ -159,13 +161,7 @@ export async function generateInfoDraft(
         .filter(Boolean)
     : [category];
   const content =
-    bodyStartIdx >= 0
-      ? lines
-          .slice(bodyStartIdx)
-          .join("\n")
-          .replace("본문:", "")
-          .trim()
-      : text;
+    bodyStartIdx >= 0 ? lines.slice(bodyStartIdx).join("\n").replace("본문:", "").trim() : text;
 
   return { title, content, summary, tags };
 }

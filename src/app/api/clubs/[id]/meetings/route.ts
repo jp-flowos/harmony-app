@@ -1,21 +1,15 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, errorResponse } from "@/lib/api-utils";
+import type { NextRequest } from "next/server";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 
 // GET /api/clubs/[id]/meetings - 정기모임 목록
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   // TODO: DB query
   return jsonResponse({ clubId: id, meetings: [] });
 }
 
 // POST /api/clubs/[id]/meetings - 정기모임 생성
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
     const body = await request.json();

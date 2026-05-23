@@ -1,13 +1,13 @@
 "use client";
 
-import { use, useState } from "react";
+import { ArrowLeft, ChatCircle, Eye, Share, ThumbsUp, UsersThree } from "@phosphor-icons/react";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { use, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ThumbsUp, Eye, ChatCircle, UsersThree, Share } from "@phosphor-icons/react";
 
 interface Comment {
   id: string;
@@ -56,8 +56,18 @@ const articleData = {
 };
 
 const sampleComments: Comment[] = [
-  { id: "c1", author: "건강한인생", content: "유익한 정보 감사합니다! 올해 꼭 검진 받으려고요.", date: "2024-03-02" },
-  { id: "c2", author: "행복한시니어", content: "국가 건강검진 예약 방법도 알려주시면 좋겠어요.", date: "2024-03-01" },
+  {
+    id: "c1",
+    author: "건강한인생",
+    content: "유익한 정보 감사합니다! 올해 꼭 검진 받으려고요.",
+    date: "2024-03-02",
+  },
+  {
+    id: "c2",
+    author: "행복한시니어",
+    content: "국가 건강검진 예약 방법도 알려주시면 좋겠어요.",
+    date: "2024-03-01",
+  },
 ];
 
 interface InfoDetailPageProps {
@@ -65,7 +75,7 @@ interface InfoDetailPageProps {
 }
 
 export default function InfoDetailPage({ params }: InfoDetailPageProps) {
-  const { id } = use(params);
+  use(params);
   const [liked, setLiked] = useState(false);
   const [comments, setComments] = useState<Comment[]>(sampleComments);
   const [newComment, setNewComment] = useState("");
@@ -86,7 +96,10 @@ export default function InfoDetailPage({ params }: InfoDetailPageProps) {
 
   return (
     <div className="space-y-4 p-4">
-      <Link href="/info" className="inline-flex items-center gap-1 text-base text-gray-500 hover:text-gray-700">
+      <Link
+        href="/info"
+        className="inline-flex items-center gap-1 text-base text-gray-500 hover:text-gray-700"
+      >
         <ArrowLeft size={20} />
         목록으로
       </Link>
@@ -98,23 +111,47 @@ export default function InfoDetailPage({ params }: InfoDetailPageProps) {
         <div className="mt-2 flex items-center gap-3 text-sm text-gray-400">
           <span>{articleData.author}</span>
           <span>{articleData.date}</span>
-          <span className="flex items-center gap-1"><Eye size={14} />{articleData.views}</span>
+          <span className="flex items-center gap-1">
+            <Eye size={14} />
+            {articleData.views}
+          </span>
         </div>
 
         <div className="mt-6 prose prose-gray max-w-none">
           {articleData.content.split("\n").map((line, i) => {
             const key = `line-${i}`;
-            if (line.startsWith("### ")) return <h3 key={key} className="text-lg font-semibold text-gray-900 mt-4">{line.replace("### ", "")}</h3>;
-            if (line.startsWith("## ")) return <h2 key={key} className="text-xl font-bold text-gray-900 mt-6">{line.replace("## ", "")}</h2>;
-            if (line.startsWith("- ")) return <p key={key} className="text-base text-gray-700 ml-4">• {line.replace("- ", "")}</p>;
+            if (line.startsWith("### "))
+              return (
+                <h3 key={key} className="text-lg font-semibold text-gray-900 mt-4">
+                  {line.replace("### ", "")}
+                </h3>
+              );
+            if (line.startsWith("## "))
+              return (
+                <h2 key={key} className="text-xl font-bold text-gray-900 mt-6">
+                  {line.replace("## ", "")}
+                </h2>
+              );
+            if (line.startsWith("- "))
+              return (
+                <p key={key} className="text-base text-gray-700 ml-4">
+                  • {line.replace("- ", "")}
+                </p>
+              );
             if (line.trim() === "") return <br key={key} />;
-            return <p key={key} className="text-base text-gray-700">{line}</p>;
+            return (
+              <p key={key} className="text-base text-gray-700">
+                {line}
+              </p>
+            );
           })}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {articleData.tags.map((tag) => (
-            <Badge key={tag} variant="secondary">{tag}</Badge>
+            <Badge key={tag} variant="secondary">
+              {tag}
+            </Badge>
           ))}
         </div>
 
@@ -129,7 +166,8 @@ export default function InfoDetailPage({ params }: InfoDetailPageProps) {
             {liked ? articleData.likes + 1 : articleData.likes}
           </Button>
           <Button variant="outline" size="sm">
-            <Share size={16} className="mr-1" />공유
+            <Share size={16} className="mr-1" />
+            공유
           </Button>
         </div>
       </article>
@@ -143,10 +181,16 @@ export default function InfoDetailPage({ params }: InfoDetailPageProps) {
           </h3>
           <div className="space-y-2">
             {articleData.relatedClubs.map((club) => (
-              <Link key={club.id} href={`/club/${club.id}`} className="flex items-center gap-3 rounded-xl p-2 hover:bg-gray-50">
+              <Link
+                key={club.id}
+                href={`/club/${club.id}`}
+                className="flex items-center gap-3 rounded-xl p-2 hover:bg-gray-50"
+              >
                 <span className="text-2xl">{club.emoji}</span>
                 <span className="text-base font-medium text-gray-900">{club.name}</span>
-                <Button variant="outline" size="sm" className="ml-auto">가입하기</Button>
+                <Button variant="outline" size="sm" className="ml-auto">
+                  가입하기
+                </Button>
               </Link>
             ))}
           </div>

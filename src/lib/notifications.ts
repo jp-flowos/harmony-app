@@ -1,11 +1,7 @@
 // Push notification infrastructure
 // Uses lazy init pattern — builds without environment variables
 
-export type NotificationType =
-  | "meeting_reminder"
-  | "new_chat"
-  | "review_request"
-  | "announcement";
+export type NotificationType = "meeting_reminder" | "new_chat" | "review_request" | "announcement";
 
 export interface NotificationPayload {
   type: NotificationType;

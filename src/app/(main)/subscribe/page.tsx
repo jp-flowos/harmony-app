@@ -1,11 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Crown, Check, X, ShieldCheck, Star, ChatCircle, MapPin, ArrowLeft } from "@phosphor-icons/react";
+import {
+  ArrowLeft,
+  ChatCircle,
+  Check,
+  Crown,
+  MapPin,
+  ShieldCheck,
+  Star,
+  X,
+} from "@phosphor-icons/react";
 import Link from "next/link";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PlanFeature {
   label: string;
@@ -78,7 +87,10 @@ export default function SubscribePage() {
         {premiumBenefits.map((benefit) => {
           const Icon = benefit.icon;
           return (
-            <div key={benefit.label} className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm">
+            <div
+              key={benefit.label}
+              className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm"
+            >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
                 <Icon size={20} className="text-orange-500" />
               </div>
@@ -104,13 +116,24 @@ export default function SubscribePage() {
               <span className="text-sm font-medium text-orange-500 text-center">프리미엄</span>
             </div>
             {features.map((f) => (
-              <div key={f.label} className="grid grid-cols-[1fr_60px_60px] gap-2 py-2 border-b border-gray-50">
+              <div
+                key={f.label}
+                className="grid grid-cols-[1fr_60px_60px] gap-2 py-2 border-b border-gray-50"
+              >
                 <span className="text-sm text-gray-700">{f.label}</span>
                 <div className="flex justify-center">
-                  {f.free ? <Check size={18} className="text-green-500" /> : <X size={18} className="text-gray-300" />}
+                  {f.free ? (
+                    <Check size={18} className="text-green-500" />
+                  ) : (
+                    <X size={18} className="text-gray-300" />
+                  )}
                 </div>
                 <div className="flex justify-center">
-                  {f.premium ? <Check size={18} className="text-orange-500" /> : <X size={18} className="text-gray-300" />}
+                  {f.premium ? (
+                    <Check size={18} className="text-orange-500" />
+                  ) : (
+                    <X size={18} className="text-gray-300" />
+                  )}
                 </div>
               </div>
             ))}

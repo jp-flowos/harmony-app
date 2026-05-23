@@ -24,10 +24,7 @@ export function errorResponse(
   message: string,
   status = 400
 ): NextResponse<ApiErrorResponse> {
-  return NextResponse.json(
-    { success: false as const, error: { code, message } },
-    { status }
-  );
+  return NextResponse.json({ success: false as const, error: { code, message } }, { status });
 }
 
 // Common error helpers

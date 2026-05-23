@@ -1,9 +1,9 @@
 "use client";
 
-import { use } from "react";
-import { ChatRoom } from "@/components/chat/ChatRoom";
 import { ArrowLeft } from "@phosphor-icons/react";
 import Link from "next/link";
+import { use } from "react";
+import { ChatRoom } from "@/components/chat/ChatRoom";
 
 interface ChatDetailPageProps {
   params: Promise<{ id: string }>;
@@ -20,11 +20,7 @@ export default function ChatDetailPage({ params }: ChatDetailPageProps) {
         </Link>
         <h1 className="text-lg font-bold text-gray-900">채팅방</h1>
       </div>
-      <ChatRoom
-        roomId={id}
-        currentUserId="demo-user"
-        currentUserNickname="활기찬시니어"
-      />
+      <ChatRoom roomId={id} currentUserId="demo-user" currentUserNickname="활기찬시니어" />
     </div>
   );
 }

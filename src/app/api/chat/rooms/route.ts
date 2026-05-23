@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { jsonResponse } from "@/lib/api-utils";
 
 // GET /api/chat/rooms - 채팅방 목록

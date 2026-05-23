@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, use } from "react";
-import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   ArrowLeft,
-  ThumbsUp,
   ChatCircle,
-  ShareNetwork,
-  Flag,
   DotsThree,
+  Flag,
+  ShareNetwork,
+  ThumbsUp,
 } from "@phosphor-icons/react";
+import Link from "next/link";
+import { use, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 interface Comment {
   id: string;
@@ -36,13 +36,28 @@ const mockPost = {
 };
 
 const mockComments: Comment[] = [
-  { id: "1", author: "산사랑", content: "저도 오늘 나가봐야겠네요!", createdAt: "2024-03-02 14:30" },
-  { id: "2", author: "건강지킴이", content: "올림픽공원 좋죠! 저도 자주 갑니다", createdAt: "2024-03-02 15:10" },
-  { id: "3", author: "여행가", content: "같이 가고 싶어요~ 언제 가시나요?", createdAt: "2024-03-02 16:00" },
+  {
+    id: "1",
+    author: "산사랑",
+    content: "저도 오늘 나가봐야겠네요!",
+    createdAt: "2024-03-02 14:30",
+  },
+  {
+    id: "2",
+    author: "건강지킴이",
+    content: "올림픽공원 좋죠! 저도 자주 갑니다",
+    createdAt: "2024-03-02 15:10",
+  },
+  {
+    id: "3",
+    author: "여행가",
+    content: "같이 가고 싶어요~ 언제 가시나요?",
+    createdAt: "2024-03-02 16:00",
+  },
 ];
 
 export default function CommunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  use(params);
   const [liked, setLiked] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState(mockComments);
@@ -76,7 +91,9 @@ export default function CommunityDetailPage({ params }: { params: Promise<{ id: 
       <Card>
         <CardContent className="p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">{mockPost.category === "free" ? "자유" : mockPost.category}</Badge>
+            <Badge variant="secondary">
+              {mockPost.category === "free" ? "자유" : mockPost.category}
+            </Badge>
           </div>
           <h2 className="text-xl font-bold text-gray-900">{mockPost.title}</h2>
           <div className="flex items-center gap-2 text-sm text-gray-500">

@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
-import { successResponse, validationError, serverError, errorResponse } from "@/lib/api-response";
-import { isGeminiAvailable, generateFortuneContent, generateInfoDraft } from "@/lib/gemini";
+import type { NextRequest } from "next/server";
+import { errorResponse, serverError, successResponse, validationError } from "@/lib/api-response";
+import { generateFortuneContent, generateInfoDraft, isGeminiAvailable } from "@/lib/gemini";
 
 export async function POST(request: NextRequest) {
   try {

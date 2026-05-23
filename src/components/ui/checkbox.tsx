@@ -1,8 +1,8 @@
 "use client";
 
-import { forwardRef } from "react";
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { Check } from "@phosphor-icons/react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 const Checkbox = forwardRef<

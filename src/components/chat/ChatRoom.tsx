@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { PaperPlaneRight } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PaperPlaneRight } from "@phosphor-icons/react";
-import { sendMessage, subscribeToMessages, type ChatMessage } from "@/lib/firebase/chat";
+import { type ChatMessage, sendMessage, subscribeToMessages } from "@/lib/firebase/chat";
 
 interface ChatRoomProps {
   roomId: string;
@@ -17,6 +17,7 @@ export function ChatRoom({ roomId, currentUserId, currentUserNickname }: ChatRoo
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messageCount = messages.length;
 
   useEffect(() => {
     const unsubscribe = subscribeToMessages(roomId, 50, (msgs) => {
@@ -26,8 +27,10 @@ export function ChatRoom({ roomId, currentUserId, currentUserNickname }: ChatRoo
   }, [roomId]);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (messageCount > 0) {
+      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messageCount]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -61,9 +64,7 @@ export function ChatRoom({ roomId, currentUserId, currentUserNickname }: ChatRoo
                   </Avatar>
                 )}
                 <div>
-                  {!isMe && (
-                    <p className="mb-1 text-xs text-gray-400">{msg.senderNickname}</p>
-                  )}
+                  {!isMe && <p className="mb-1 text-xs text-gray-400">{msg.senderNickname}</p>}
                   <div
                     className={`rounded-2xl px-4 py-3 text-base ${
                       isMe

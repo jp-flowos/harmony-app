@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, errorResponse } from "@/lib/api-utils";
+import type { NextRequest } from "next/server";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 import { generateFortune, ZODIAC_ANIMALS, type ZodiacAnimal } from "@/lib/fortune";
 
 export async function GET(request: NextRequest) {

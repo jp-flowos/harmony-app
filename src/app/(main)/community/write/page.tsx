@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { ArrowLeft } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "@phosphor-icons/react";
 
 const CATEGORIES = [
   { key: "free", label: "자유" },
@@ -45,8 +45,8 @@ export default function CommunityWritePage() {
       <Card>
         <CardContent className="p-5 space-y-4">
           {/* Category */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">카테고리</label>
+          <fieldset>
+            <legend className="text-sm font-medium text-gray-700 mb-2">카테고리</legend>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map((cat) => (
                 <Button
@@ -59,12 +59,18 @@ export default function CommunityWritePage() {
                 </Button>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           {/* Title */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">제목</label>
+            <label
+              htmlFor="community-title"
+              className="text-sm font-medium text-gray-700 mb-2 block"
+            >
+              제목
+            </label>
             <Input
+              id="community-title"
               placeholder="제목을 입력하세요"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -73,8 +79,14 @@ export default function CommunityWritePage() {
 
           {/* Content */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">내용</label>
+            <label
+              htmlFor="community-content"
+              className="text-sm font-medium text-gray-700 mb-2 block"
+            >
+              내용
+            </label>
             <Textarea
+              id="community-content"
               placeholder="내용을 입력하세요"
               value={content}
               onChange={(e) => setContent(e.target.value)}

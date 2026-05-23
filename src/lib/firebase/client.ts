@@ -2,8 +2,8 @@
  * Firebase 채팅 클라이언트
  * 추상화 레이어: 향후 WebSocket으로 이관 시 이 파일만 교체
  */
-import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { getDatabase, type Database } from "firebase/database";
+import { type FirebaseApp, getApps, initializeApp } from "firebase/app";
+import { type Database, getDatabase } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",

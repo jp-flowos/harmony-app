@@ -1,8 +1,8 @@
 "use client";
 
-import { forwardRef } from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "@phosphor-icons/react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 const Sheet = DialogPrimitive.Root;
@@ -33,23 +33,24 @@ const sheetVariants: Record<string, string> = {
   right: "inset-y-0 right-0 h-full w-3/4 max-w-sm border-l",
 };
 
-const SheetContent = forwardRef<React.ComponentRef<typeof DialogPrimitive.Content>, SheetContentProps>(
-  ({ side = "bottom", className, children, ...props }, ref) => (
-    <SheetPortal>
-      <SheetOverlay />
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn("fixed z-50 bg-white p-6 shadow-lg", sheetVariants[side], className)}
-        {...props}
-      >
-        {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-2 hover:bg-gray-100">
-          <X size={24} />
-        </DialogPrimitive.Close>
-      </DialogPrimitive.Content>
-    </SheetPortal>
-  )
-);
+const SheetContent = forwardRef<
+  React.ComponentRef<typeof DialogPrimitive.Content>,
+  SheetContentProps
+>(({ side = "bottom", className, children, ...props }, ref) => (
+  <SheetPortal>
+    <SheetOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn("fixed z-50 bg-white p-6 shadow-lg", sheetVariants[side], className)}
+      {...props}
+    >
+      {children}
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-2 hover:bg-gray-100">
+        <X size={24} />
+      </DialogPrimitive.Close>
+    </DialogPrimitive.Content>
+  </SheetPortal>
+));
 SheetContent.displayName = "SheetContent";
 
 function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

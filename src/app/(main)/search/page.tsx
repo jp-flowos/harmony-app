@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { ArrowRight, Clock, MagnifyingGlass, X } from "@phosphor-icons/react";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { MagnifyingGlass, X, Clock, ArrowRight } from "@phosphor-icons/react";
+import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SearchResult {
   id: string;
@@ -151,11 +151,15 @@ export default function SearchPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${TYPE_COLORS[item.type]}`}>
+                      <span
+                        className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${TYPE_COLORS[item.type]}`}
+                      >
                         {TYPE_LABELS[item.type]}
                       </span>
                       {item.category && (
-                        <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {item.category}
+                        </Badge>
                       )}
                     </div>
                     <h3 className="text-base font-semibold text-gray-900 truncate">{item.title}</h3>
@@ -190,7 +194,10 @@ export default function SearchPage() {
         {query && (
           <button
             type="button"
-            onClick={() => { setQuery(""); setResults(null); }}
+            onClick={() => {
+              setQuery("");
+              setResults(null);
+            }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
           >
             <X size={16} />
@@ -204,6 +211,7 @@ export default function SearchPage() {
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-semibold text-gray-500">최근 검색어</h2>
             <button
+              type="button"
               onClick={handleClearRecent}
               className="text-xs text-gray-400 hover:text-gray-600"
             >
@@ -213,6 +221,7 @@ export default function SearchPage() {
           <div className="flex flex-wrap gap-2">
             {recentSearches.map((q) => (
               <button
+                type="button"
                 key={q}
                 onClick={() => handleRecentClick(q)}
                 className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
@@ -244,7 +253,9 @@ export default function SearchPage() {
               <TabsTrigger value="all">전체 ({results.total})</TabsTrigger>
               <TabsTrigger value="clubs">클럽 ({results.grouped.clubs.length})</TabsTrigger>
               <TabsTrigger value="info">정보 ({results.grouped.info.length})</TabsTrigger>
-              <TabsTrigger value="community">커뮤니티 ({results.grouped.community.length})</TabsTrigger>
+              <TabsTrigger value="community">
+                커뮤니티 ({results.grouped.community.length})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="all" className="mt-3">

@@ -1,19 +1,32 @@
 "use client";
 
+import { ArrowLeft, Camera } from "@phosphor-icons/react";
+import Link from "next/link";
 import { useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Camera } from "@phosphor-icons/react";
-import Link from "next/link";
 
 const hobbyOptions = [
-  "등산", "골프", "독서", "여행", "요리", "사진", "낚시", "바둑",
-  "테니스", "수영", "서예", "가드닝", "댄스", "요가", "그림",
+  "등산",
+  "골프",
+  "독서",
+  "여행",
+  "요리",
+  "사진",
+  "낚시",
+  "바둑",
+  "테니스",
+  "수영",
+  "서예",
+  "가드닝",
+  "댄스",
+  "요가",
+  "그림",
 ];
 
 export default function ProfileEditPage() {

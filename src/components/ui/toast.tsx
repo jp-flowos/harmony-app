@@ -1,8 +1,8 @@
 "use client";
 
-import { forwardRef } from "react";
-import * as ToastPrimitive from "@radix-ui/react-toast";
 import { X } from "@phosphor-icons/react";
+import * as ToastPrimitive from "@radix-ui/react-toast";
+import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 const ToastProvider = ToastPrimitive.Provider;
@@ -58,7 +58,10 @@ const ToastClose = forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitive.Close
     ref={ref}
-    className={cn("absolute right-2 top-2 rounded-md p-1 text-gray-500 hover:text-gray-900", className)}
+    className={cn(
+      "absolute right-2 top-2 rounded-md p-1 text-gray-500 hover:text-gray-900",
+      className
+    )}
     {...props}
   >
     <X size={16} />
@@ -74,4 +77,12 @@ function ToastDescription({ className, ...props }: React.HTMLAttributes<HTMLDivE
   return <div className={cn("text-sm text-gray-500", className)} {...props} />;
 }
 
-export { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, ToastClose, ToastAction };
+export {
+  ToastProvider,
+  ToastViewport,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastAction,
+};

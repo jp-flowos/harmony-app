@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { Bell, CalendarDots, ChatCircle, ImageSquare, Users } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Bell, ChatCircle, CalendarDots, ImageSquare, Users } from "@phosphor-icons/react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const clubData = {
   name: "서울 등산 모임",
@@ -25,12 +25,33 @@ const notices = [
 ];
 
 const posts = [
-  { id: "1", author: "산사랑", content: "지난주 관악산 후기입니다 🏔️", likes: 12, comments: 3, date: "2024-03-02" },
-  { id: "2", author: "등산매니아", content: "등산화 추천 부탁드려요", likes: 5, comments: 8, date: "2024-03-01" },
+  {
+    id: "1",
+    author: "산사랑",
+    content: "지난주 관악산 후기입니다 🏔️",
+    likes: 12,
+    comments: 3,
+    date: "2024-03-02",
+  },
+  {
+    id: "2",
+    author: "등산매니아",
+    content: "등산화 추천 부탁드려요",
+    likes: 5,
+    comments: 8,
+    date: "2024-03-01",
+  },
 ];
 
 const meetings = [
-  { id: "m1", title: "3월 정기 산행", date: "2024-03-15", location: "북한산 우이역", current: 12, max: 20 },
+  {
+    id: "m1",
+    title: "3월 정기 산행",
+    date: "2024-03-15",
+    location: "북한산 우이역",
+    current: 12,
+    max: 20,
+  },
   { id: "m2", title: "4월 봄 산행", date: "2024-04-12", location: "도봉산", current: 5, max: 20 },
 ];
 
@@ -40,6 +61,8 @@ const members = [
   { id: "u3", nickname: "건강한인생", role: "member" as const },
   { id: "u4", nickname: "행복한시니어", role: "member" as const },
 ];
+
+const photoSlots = ["photo-1", "photo-2", "photo-3", "photo-4", "photo-5", "photo-6"] as const;
 
 const roleLabels: Record<string, string> = { owner: "모임장", admin: "운영진", member: "멤버" };
 
@@ -73,12 +96,22 @@ export default function ClubDetailPage() {
       <div className="px-4">
         <Tabs defaultValue="notice">
           <TabsList>
-            <TabsTrigger value="notice"><Bell size={18} className="mr-1" /> 공지</TabsTrigger>
+            <TabsTrigger value="notice">
+              <Bell size={18} className="mr-1" /> 공지
+            </TabsTrigger>
             <TabsTrigger value="board">게시판</TabsTrigger>
-            <TabsTrigger value="meeting"><CalendarDots size={18} className="mr-1" /> 일정</TabsTrigger>
-            <TabsTrigger value="photo"><ImageSquare size={18} className="mr-1" /> 사진</TabsTrigger>
-            <TabsTrigger value="chat"><ChatCircle size={18} className="mr-1" /> 채팅</TabsTrigger>
-            <TabsTrigger value="members"><Users size={18} className="mr-1" /> 멤버</TabsTrigger>
+            <TabsTrigger value="meeting">
+              <CalendarDots size={18} className="mr-1" /> 일정
+            </TabsTrigger>
+            <TabsTrigger value="photo">
+              <ImageSquare size={18} className="mr-1" /> 사진
+            </TabsTrigger>
+            <TabsTrigger value="chat">
+              <ChatCircle size={18} className="mr-1" /> 채팅
+            </TabsTrigger>
+            <TabsTrigger value="members">
+              <Users size={18} className="mr-1" /> 멤버
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="notice" className="space-y-3">
@@ -122,7 +155,9 @@ export default function ClubDetailPage() {
                     <p className="mt-1 text-base text-gray-500">📅 {m.date}</p>
                     <p className="text-base text-gray-500">📍 {m.location}</p>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm text-gray-400">{m.current}/{m.max}명 참여</span>
+                      <span className="text-sm text-gray-400">
+                        {m.current}/{m.max}명 참여
+                      </span>
                       <Button size="sm">참여하기</Button>
                     </div>
                   </CardContent>
@@ -133,8 +168,11 @@ export default function ClubDetailPage() {
 
           <TabsContent value="photo">
             <div className="grid grid-cols-3 gap-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={`photo-${i}`} className="aspect-square rounded-xl bg-gray-200 flex items-center justify-center text-2xl">
+              {photoSlots.map((photoId) => (
+                <div
+                  key={photoId}
+                  className="aspect-square rounded-xl bg-gray-200 flex items-center justify-center text-2xl"
+                >
                   📷
                 </div>
               ))}

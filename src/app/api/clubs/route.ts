@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, errorResponse } from "@/lib/api-utils";
+import type { NextRequest } from "next/server";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 
 // GET /api/clubs - 클럽 목록
 export async function GET(request: NextRequest) {

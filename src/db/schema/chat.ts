@@ -1,6 +1,6 @@
-import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
-import { profiles } from "./users";
+import { pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { clubs } from "./clubs";
+import { profiles } from "./users";
 
 export const chatRoomTypeEnum = pgEnum("h_chat_room_type", ["club", "private", "open"]);
 export const chatRequestStatusEnum = pgEnum("h_chat_request_status", [

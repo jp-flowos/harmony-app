@@ -1,8 +1,8 @@
 "use client";
 
-import { forwardRef } from "react";
-import * as SelectPrimitive from "@radix-ui/react-select";
 import { CaretDown, CaretUp, Check } from "@phosphor-icons/react";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 const Select = SelectPrimitive.Root;
@@ -16,14 +16,14 @@ const SelectTrigger = forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-12 w-full items-center justify-between rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-base placeholder:text-gray-400 focus:border-orange-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+      "flex h-14 w-full items-center justify-between rounded-xl border-2 border-gray-300 bg-white px-4 py-3 text-lg text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60",
       className
     )}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <CaretDown size={20} className="text-gray-500" />
+      <CaretDown size={22} className="text-gray-700" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -48,7 +48,11 @@ const SelectContent = forwardRef<
         <CaretUp size={16} />
       </SelectPrimitive.ScrollUpButton>
       <SelectPrimitive.Viewport
-        className={cn("p-1", position === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]")}
+        className={cn(
+          "p-1",
+          position === "popper" &&
+            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+        )}
       >
         {children}
       </SelectPrimitive.Viewport>
@@ -67,7 +71,7 @@ const SelectItem = forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-lg py-3 pl-10 pr-4 text-base outline-none hover:bg-orange-50 focus:bg-orange-50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex w-full min-h-[48px] cursor-pointer select-none items-center rounded-lg py-3 pl-10 pr-4 text-lg text-gray-900 outline-none hover:bg-orange-50 focus:bg-orange-50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
     {...props}

@@ -1,4 +1,10 @@
-import { MagnifyingGlass, UsersThree, ChatCircle, Article, Sparkle } from "@phosphor-icons/react/dist/ssr";
+import {
+  Article,
+  ChatCircle,
+  MagnifyingGlass,
+  Sparkle,
+  UsersThree,
+} from "@phosphor-icons/react/dist/ssr";
 import type { ComponentType } from "react";
 
 interface EmptyStateProps {
@@ -25,9 +31,7 @@ export function EmptyState({ icon = "sparkle", title, description, action }: Emp
         <Icon size={32} className="text-gray-400" weight="light" />
       </div>
       <h3 className="text-lg font-semibold text-gray-700">{title}</h3>
-      {description && (
-        <p className="mt-2 max-w-xs text-sm text-gray-500">{description}</p>
-      )}
+      {description && <p className="mt-2 max-w-xs text-sm text-gray-500">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

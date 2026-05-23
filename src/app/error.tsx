@@ -1,8 +1,8 @@
 "use client";
 
+import { WarningCircle } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { WarningCircle } from "@phosphor-icons/react";
 
 export default function GlobalError({
   error,
@@ -25,9 +25,7 @@ export default function GlobalError({
         <p className="mt-2 text-sm text-gray-500">
           일시적인 오류가 발생했습니다. 다시 시도해 주세요.
         </p>
-        {error.digest && (
-          <p className="mt-1 text-xs text-gray-400">오류 코드: {error.digest}</p>
-        )}
+        {error.digest && <p className="mt-1 text-xs text-gray-400">오류 코드: {error.digest}</p>}
         <div className="mt-6 flex justify-center gap-3">
           <Button onClick={reset} variant="default">
             다시 시도

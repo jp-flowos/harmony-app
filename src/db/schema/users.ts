@@ -1,7 +1,12 @@
-import { pgTable, text, timestamp, boolean, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const subscriptionTierEnum = pgEnum("h_subscription_tier", ["free", "premium"]);
-export const verificationTypeEnum = pgEnum("h_verification_type", ["real_name", "face", "activity", "review"]);
+export const verificationTypeEnum = pgEnum("h_verification_type", [
+  "real_name",
+  "face",
+  "activity",
+  "review",
+]);
 
 export const profiles = pgTable("h_profiles", {
   id: text("id").primaryKey(), // Supabase auth user id

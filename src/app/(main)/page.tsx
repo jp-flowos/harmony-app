@@ -1,8 +1,17 @@
+import {
+  Eye,
+  Fire,
+  MagnifyingGlass,
+  Newspaper,
+  Sparkle,
+  Star,
+  UserCirclePlus,
+  UsersThree,
+} from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, UsersThree, Fire, Eye, Newspaper, Sparkle, MagnifyingGlass, UserCirclePlus } from "@phosphor-icons/react/dist/ssr";
+import { Card, CardContent } from "@/components/ui/card";
 import { generateFortune, getZodiacEmoji, ZODIAC_ANIMALS } from "@/lib/fortune";
 
 function getToday(): string {
@@ -28,11 +37,19 @@ const popularPosts = [
   { id: "3", title: "제주도 3박4일 여행 후기", author: "여행가", likes: 31, comments: 15 },
 ];
 
+const fortuneScoreStars = [1, 2, 3, 4, 5] as const;
+
 // 개인화 추천 (mock — would come from /api/recommendations)
 const personalRecommendations = [
   { id: "r1", name: "서울 등산 모임", category: "등산", reason: "관심 취미와 일치", members: 45 },
   { id: "r2", name: "골프 친구들", category: "골프", reason: "같은 지역 · 인기 모임", members: 32 },
-  { id: "r3", name: "서울 독서 모임", category: "독서", reason: "비슷한 취미 회원들이 활동 중", members: 28 },
+  {
+    id: "r3",
+    name: "서울 독서 모임",
+    category: "독서",
+    reason: "비슷한 취미 회원들이 활동 중",
+    members: 28,
+  },
 ];
 
 export default function HomePage() {
@@ -62,11 +79,15 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <Sparkle size={32} weight="fill" className="text-orange-400" />
             <div className="flex-1">
-              <p className="text-base font-semibold text-gray-900">하모니에 오신 것을 환영합니다!</p>
+              <p className="text-base font-semibold text-gray-900">
+                하모니에 오신 것을 환영합니다!
+              </p>
               <p className="mt-1 text-sm text-gray-600">프로필을 완성하고 관심 클럽을 찾아보세요</p>
             </div>
             <Link href="/mypage/edit">
-              <Button size="sm" variant="outline">시작하기</Button>
+              <Button size="sm" variant="outline">
+                시작하기
+              </Button>
             </Link>
           </div>
         </CardContent>
@@ -82,14 +103,16 @@ export default function HomePage() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-gray-900">{fortune.zodiac}띠 오늘의 운세</span>
+                  <span className="text-base font-semibold text-gray-900">
+                    {fortune.zodiac}띠 오늘의 운세
+                  </span>
                   <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }, (_, i) => (
+                    {fortuneScoreStars.map((star) => (
                       <Star
-                        key={i}
+                        key={star}
                         size={14}
-                        weight={i < fortune.score ? "fill" : "regular"}
-                        className={i < fortune.score ? "text-yellow-400" : "text-gray-300"}
+                        weight={star <= fortune.score ? "fill" : "regular"}
+                        className={star <= fortune.score ? "text-yellow-400" : "text-gray-300"}
                       />
                     ))}
                   </div>
@@ -123,7 +146,9 @@ export default function HomePage() {
                   <div className="flex-1">
                     <h3 className="text-base font-semibold text-gray-900">{rec.name}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-xs">{rec.category}</Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {rec.category}
+                      </Badge>
                       <span className="text-xs text-orange-500">{rec.reason}</span>
                     </div>
                   </div>
@@ -155,7 +180,9 @@ export default function HomePage() {
                 <CardContent className="p-4 text-center">
                   <div className="text-4xl mb-2">{club.coverEmoji}</div>
                   <h3 className="text-base font-semibold text-gray-900 truncate">{club.name}</h3>
-                  <Badge variant="secondary" className="mt-2">{club.category}</Badge>
+                  <Badge variant="secondary" className="mt-2">
+                    {club.category}
+                  </Badge>
                   <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-400">
                     <span className="flex items-center gap-0.5">
                       <UsersThree size={12} /> {club.members}
@@ -188,7 +215,9 @@ export default function HomePage() {
               <Card className="hover:shadow-sm transition-shadow mb-2">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
-                    <Badge variant="outline" className="mb-1">{info.category}</Badge>
+                    <Badge variant="outline" className="mb-1">
+                      {info.category}
+                    </Badge>
                     <h3 className="text-base font-medium text-gray-900">{info.title}</h3>
                   </div>
                   <span className="flex items-center gap-1 text-xs text-gray-400">
@@ -204,9 +233,7 @@ export default function HomePage() {
       {/* Popular Community Posts */}
       <section>
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            💬 커뮤니티
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">💬 커뮤니티</h2>
           <Link href="/community" className="text-base text-orange-500 font-medium">
             전체보기
           </Link>

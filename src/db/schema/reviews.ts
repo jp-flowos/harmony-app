@@ -1,6 +1,6 @@
-import { pgTable, text, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
-import { profiles } from "./users";
+import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { clubMeetings } from "./clubs";
+import { profiles } from "./users";
 
 export const meetingReviews = pgTable("h_meeting_reviews", {
   id: text("id").primaryKey(),

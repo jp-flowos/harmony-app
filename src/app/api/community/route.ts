@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, errorResponse } from "@/lib/api-utils";
+import type { NextRequest } from "next/server";
+import { errorResponse, jsonResponse } from "@/lib/api-utils";
 
 interface CommunityPostData {
   id: string;
@@ -18,9 +18,17 @@ interface CommunityPostData {
 // Mock data (would use DB in production)
 const posts: CommunityPostData[] = [
   {
-    id: "1", category: "free", userId: "u1", title: "오늘 날씨가 정말 좋네요",
-    content: "산책하기 딱 좋은 날입니다.", imageUrls: [], tags: ["일상"],
-    likeCount: 15, commentCount: 6, region: "서울", createdAt: "2024-03-02T10:00:00Z",
+    id: "1",
+    category: "free",
+    userId: "u1",
+    title: "오늘 날씨가 정말 좋네요",
+    content: "산책하기 딱 좋은 날입니다.",
+    imageUrls: [],
+    tags: ["일상"],
+    likeCount: 15,
+    commentCount: 6,
+    region: "서울",
+    createdAt: "2024-03-02T10:00:00Z",
   },
 ];
 
@@ -29,7 +37,7 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get("category");
   const sort = searchParams.get("sort") ?? "latest";
 
-  let result = category ? posts.filter((p) => p.category === category) : [...posts];
+  const result = category ? posts.filter((p) => p.category === category) : [...posts];
   if (sort === "popular") {
     result.sort((a, b) => b.likeCount - a.likeCount);
   } else {

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // --- Stats ---
 const stats = {
@@ -31,10 +31,38 @@ interface Report {
 }
 
 const initialReports: Report[] = [
-  { id: "1", type: "post", reason: "부적절한 게시글", status: "pending", date: "2024-03-02", targetId: "p1" },
-  { id: "2", type: "comment", reason: "스팸 댓글", status: "pending", date: "2024-03-02", targetId: "c1" },
-  { id: "3", type: "user", reason: "욕설/비방", status: "processed", date: "2024-03-01", targetId: "u1" },
-  { id: "4", type: "post", reason: "허위 정보", status: "pending", date: "2024-03-01", targetId: "p2" },
+  {
+    id: "1",
+    type: "post",
+    reason: "부적절한 게시글",
+    status: "pending",
+    date: "2024-03-02",
+    targetId: "p1",
+  },
+  {
+    id: "2",
+    type: "comment",
+    reason: "스팸 댓글",
+    status: "pending",
+    date: "2024-03-02",
+    targetId: "c1",
+  },
+  {
+    id: "3",
+    type: "user",
+    reason: "욕설/비방",
+    status: "processed",
+    date: "2024-03-01",
+    targetId: "u1",
+  },
+  {
+    id: "4",
+    type: "post",
+    reason: "허위 정보",
+    status: "pending",
+    date: "2024-03-01",
+    targetId: "p2",
+  },
 ];
 
 // --- Info Contents ---
@@ -47,8 +75,20 @@ interface InfoContent {
 }
 
 const initialContents: InfoContent[] = [
-  { id: "1", title: "봄철 건강 관리 가이드", category: "건강", status: "published", date: "2024-03-01" },
-  { id: "2", title: "2024 정부 지원금 총정리", category: "정부지원", status: "published", date: "2024-02-28" },
+  {
+    id: "1",
+    title: "봄철 건강 관리 가이드",
+    category: "건강",
+    status: "published",
+    date: "2024-03-01",
+  },
+  {
+    id: "2",
+    title: "2024 정부 지원금 총정리",
+    category: "정부지원",
+    status: "published",
+    date: "2024-02-28",
+  },
   { id: "3", title: "시니어 여행지 TOP 10", category: "여행", status: "draft", date: "2024-02-27" },
 ];
 
@@ -101,7 +141,9 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="p-5 text-center">
-              <p className="text-3xl font-bold text-orange-500">{stats.totalUsers.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-orange-500">
+                {stats.totalUsers.toLocaleString()}
+              </p>
               <p className="mt-1 text-sm text-gray-500">전체 회원</p>
             </CardContent>
           </Card>
@@ -141,7 +183,10 @@ export default function AdminDashboardPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {reports.map((report) => (
-                  <div key={report.id} className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
+                  <div
+                    key={report.id}
+                    className="flex items-center justify-between rounded-xl bg-gray-50 p-4"
+                  >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Badge variant={report.status === "pending" ? "destructive" : "secondary"}>
@@ -202,7 +247,10 @@ export default function AdminDashboardPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {contents.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between rounded-xl bg-gray-50 p-4"
+                  >
                     <div>
                       <div className="flex items-center gap-2">
                         <Badge variant={c.status === "published" ? "default" : "secondary"}>
@@ -214,8 +262,14 @@ export default function AdminDashboardPage() {
                       <p className="text-sm text-gray-400">{c.date}</p>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">수정</Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleDeleteContent(c.id)}>
+                      <Button variant="outline" size="sm">
+                        수정
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteContent(c.id)}
+                      >
                         삭제
                       </Button>
                     </div>
@@ -234,7 +288,10 @@ export default function AdminDashboardPage() {
               <CardContent>
                 <div className="space-y-3">
                   {subscriptionStats.map((s) => (
-                    <div key={s.month} className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
+                    <div
+                      key={s.month}
+                      className="flex items-center justify-between rounded-xl bg-gray-50 p-4"
+                    >
                       <div>
                         <p className="text-base font-medium text-gray-700">{s.month}</p>
                         <p className="text-sm text-gray-400">구독자 {s.count}명</p>
@@ -271,8 +328,23 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setFortuneEditZodiac(e.target.value)}
                 >
                   <option value="">띠 선택</option>
-                  {["쥐", "소", "호랑이", "토끼", "용", "뱀", "말", "양", "원숭이", "닭", "개", "돼지"].map((z) => (
-                    <option key={z} value={z}>{z}띠</option>
+                  {[
+                    "쥐",
+                    "소",
+                    "호랑이",
+                    "토끼",
+                    "용",
+                    "뱀",
+                    "말",
+                    "양",
+                    "원숭이",
+                    "닭",
+                    "개",
+                    "돼지",
+                  ].map((z) => (
+                    <option key={z} value={z}>
+                      {z}띠
+                    </option>
                   ))}
                 </select>
                 <Textarea
@@ -281,7 +353,12 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setFortuneEditContent(e.target.value)}
                   rows={4}
                 />
-                <Button onClick={() => { setFortuneEditZodiac(""); setFortuneEditContent(""); }}>
+                <Button
+                  onClick={() => {
+                    setFortuneEditZodiac("");
+                    setFortuneEditContent("");
+                  }}
+                >
                   저장
                 </Button>
               </CardContent>

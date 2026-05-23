@@ -1,7 +1,15 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { profiles } from "./users";
 
-export const placeCategoryEnum = ["cafe", "park", "golf", "culture", "hospital", "restaurant", "user"] as const;
+export const placeCategoryEnum = [
+  "cafe",
+  "park",
+  "golf",
+  "culture",
+  "hospital",
+  "restaurant",
+  "user",
+] as const;
 
 export const places = pgTable("h_places", {
   id: text("id").primaryKey(),

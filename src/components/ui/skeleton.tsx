@@ -1,15 +1,19 @@
 import { cn } from "@/lib/utils";
 
+const listSkeletonItems = [
+  "list-item-1",
+  "list-item-2",
+  "list-item-3",
+  "list-item-4",
+  "list-item-5",
+];
+
 interface SkeletonProps {
   className?: string;
 }
 
 export function Skeleton({ className }: SkeletonProps) {
-  return (
-    <div
-      className={cn("animate-pulse rounded-md bg-gray-200", className)}
-    />
-  );
+  return <div className={cn("animate-pulse rounded-md bg-gray-200", className)} />;
 }
 
 export function CardSkeleton() {
@@ -63,8 +67,8 @@ export function ProfileSkeleton() {
 export function SearchResultSkeleton() {
   return (
     <div className="space-y-3">
-      {Array.from({ length: 5 }, (_, i) => (
-        <ListItemSkeleton key={i} />
+      {listSkeletonItems.map((item) => (
+        <ListItemSkeleton key={item} />
       ))}
     </div>
   );

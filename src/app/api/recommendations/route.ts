@@ -1,10 +1,10 @@
-import { NextRequest } from "next/server";
-import { successResponse, unauthorizedError, serverError } from "@/lib/api-response";
+import type { NextRequest } from "next/server";
+import { serverError, successResponse, unauthorizedError } from "@/lib/api-response";
 import {
+  type ClubForRecommendation,
   scoreClubs,
   scoreInfoContents,
   type UserProfile,
-  type ClubForRecommendation,
 } from "@/lib/recommendation";
 
 // Mock data — in production, query DB
@@ -16,11 +16,46 @@ const mockUser: UserProfile = {
 };
 
 const mockClubs: ClubForRecommendation[] = [
-  { id: "c1", name: "서울 등산 모임", category: "등산", region: "서울", memberCount: 45, members: ["u2", "u3"] },
-  { id: "c2", name: "골프 친구들", category: "골프", region: "서울", memberCount: 32, members: ["u2", "u4"] },
-  { id: "c3", name: "부산 낚시 클럽", category: "낚시", region: "부산", memberCount: 18, members: ["u5"] },
-  { id: "c4", name: "서울 독서 모임", category: "독서", region: "서울", memberCount: 28, members: ["u3", "u6"] },
-  { id: "c5", name: "대전 등산회", category: "등산", region: "대전", memberCount: 22, members: ["u7"] },
+  {
+    id: "c1",
+    name: "서울 등산 모임",
+    category: "등산",
+    region: "서울",
+    memberCount: 45,
+    members: ["u2", "u3"],
+  },
+  {
+    id: "c2",
+    name: "골프 친구들",
+    category: "골프",
+    region: "서울",
+    memberCount: 32,
+    members: ["u2", "u4"],
+  },
+  {
+    id: "c3",
+    name: "부산 낚시 클럽",
+    category: "낚시",
+    region: "부산",
+    memberCount: 18,
+    members: ["u5"],
+  },
+  {
+    id: "c4",
+    name: "서울 독서 모임",
+    category: "독서",
+    region: "서울",
+    memberCount: 28,
+    members: ["u3", "u6"],
+  },
+  {
+    id: "c5",
+    name: "대전 등산회",
+    category: "등산",
+    region: "대전",
+    memberCount: 22,
+    members: ["u7"],
+  },
 ];
 
 const mockInfoContents = [

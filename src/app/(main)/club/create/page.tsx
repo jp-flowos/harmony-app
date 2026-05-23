@@ -1,18 +1,55 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ArrowLeft } from "@phosphor-icons/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
-const categories = ["등산", "골프", "독서", "요리", "사진", "여행", "음악", "댄스", "낚시", "바둑", "원예", "수영"];
-const regions = ["서울", "경기", "인천", "부산", "대구", "대전", "광주", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
+const categories = [
+  "등산",
+  "골프",
+  "독서",
+  "요리",
+  "사진",
+  "여행",
+  "음악",
+  "댄스",
+  "낚시",
+  "바둑",
+  "원예",
+  "수영",
+];
+const regions = [
+  "서울",
+  "경기",
+  "인천",
+  "부산",
+  "대구",
+  "대전",
+  "광주",
+  "울산",
+  "세종",
+  "강원",
+  "충북",
+  "충남",
+  "전북",
+  "전남",
+  "경북",
+  "경남",
+  "제주",
+];
 const joinTypes = [
   { value: "open", label: "자유 가입" },
   { value: "approval", label: "승인 후 가입" },
@@ -34,7 +71,10 @@ export default function CreateClubPage() {
 
   return (
     <div className="space-y-4 p-4">
-      <Link href="/club" className="inline-flex items-center gap-1 text-base text-gray-500 hover:text-gray-700">
+      <Link
+        href="/club"
+        className="inline-flex items-center gap-1 text-base text-gray-500 hover:text-gray-700"
+      >
         <ArrowLeft size={20} />
         뒤로가기
       </Link>
@@ -65,7 +105,9 @@ export default function CreateClubPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -79,7 +121,9 @@ export default function CreateClubPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {regions.map((r) => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -104,7 +148,9 @@ export default function CreateClubPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {joinTypes.map((j) => (
-                    <SelectItem key={j.value} value={j.value}>{j.label}</SelectItem>
+                    <SelectItem key={j.value} value={j.value}>
+                      {j.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

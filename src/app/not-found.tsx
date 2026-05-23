@@ -1,6 +1,6 @@
+import { MagnifyingGlass } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { MagnifyingGlass } from "@phosphor-icons/react/dist/ssr";
 
 export default function NotFoundPage() {
   return (

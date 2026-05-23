@@ -1,18 +1,18 @@
-import { NextRequest } from "next/server";
-import { jsonResponse, errorResponse } from "@/lib/api-utils";
+import type { NextRequest } from "next/server";
+import { jsonResponse } from "@/lib/api-utils";
 
 // POST /api/clubs/[id]/join - 클럽 가입
-export async function POST(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   // TODO: Auth check + DB insert clubMembers
-  return jsonResponse({
-    clubId: id,
-    joined: true,
-    joinedAt: new Date().toISOString(),
-  }, 201);
+  return jsonResponse(
+    {
+      clubId: id,
+      joined: true,
+      joinedAt: new Date().toISOString(),
+    },
+    201
+  );
 }
 
 // DELETE /api/clubs/[id]/join - 클럽 탈퇴

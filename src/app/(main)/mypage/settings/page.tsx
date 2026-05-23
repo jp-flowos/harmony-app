@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { ArrowLeft, Bell, CaretRight, FileText, Info, Lock, Trash } from "@phosphor-icons/react";
 import Link from "next/link";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, CaretRight, Bell, Lock, Trash, Info, FileText } from "@phosphor-icons/react";
 import type { NotificationSettings } from "@/lib/notifications";
 import { DEFAULT_NOTIFICATION_SETTINGS } from "@/lib/notifications";
 
@@ -23,7 +23,9 @@ const notificationLabels: Record<keyof NotificationSettings, string> = {
 };
 
 export default function SettingsPage() {
-  const [notifSettings, setNotifSettings] = useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
+  const [notifSettings, setNotifSettings] = useState<NotificationSettings>(
+    DEFAULT_NOTIFICATION_SETTINGS
+  );
 
   const toggleNotif = (key: keyof NotificationSettings) => {
     setNotifSettings((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -50,10 +52,7 @@ export default function SettingsPage() {
           {(Object.keys(notificationLabels) as Array<keyof NotificationSettings>).map((key) => (
             <div key={key} className="flex items-center justify-between">
               <span className="text-base text-gray-700">{notificationLabels[key]}</span>
-              <Switch
-                checked={notifSettings[key]}
-                onCheckedChange={() => toggleNotif(key)}
-              />
+              <Switch checked={notifSettings[key]} onCheckedChange={() => toggleNotif(key)} />
             </div>
           ))}
         </CardContent>

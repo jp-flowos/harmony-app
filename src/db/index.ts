@@ -13,7 +13,11 @@ function createDb() {
       },
     });
   }
-  const client = postgres(connectionString, { prepare: false });
+  const client = postgres(connectionString, {
+    prepare: false,
+    ssl: "require",
+    connection: { search_path: "si_mvp,public,extensions" },
+  });
   return drizzle(client, { schema });
 }
 
