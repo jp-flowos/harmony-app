@@ -29,13 +29,14 @@ const CATEGORIES = [
   { key: "review", label: "정보공유" },
 ];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  free: "bg-gray-100 text-gray-700",
-  health: "bg-green-100 text-green-700",
-  travel: "bg-blue-100 text-blue-700",
-  hobby: "bg-purple-100 text-purple-700",
-  daily: "bg-yellow-100 text-yellow-700",
-  review: "bg-orange-100 text-orange-700",
+// Category-tinted badges using the new palette
+const CATEGORY_BADGE: Record<string, string> = {
+  free: "bg-cream-100 text-mocha-800",
+  health: "bg-sage-100 text-sage-700",
+  travel: "bg-[var(--color-info-bg)] text-[var(--color-info)]",
+  hobby: "bg-coral-100 text-coral-800",
+  daily: "bg-[var(--color-warning-bg)] text-[var(--color-warning)]",
+  review: "bg-coral-100 text-coral-800",
 };
 
 const mockPosts: CommunityPost[] = [
@@ -47,7 +48,7 @@ const mockPosts: CommunityPost[] = [
     author: "봄바람",
     likeCount: 15,
     commentCount: 6,
-    createdAt: "2024-03-02",
+    createdAt: "2026-05-22",
     region: "서울",
   },
   {
@@ -58,7 +59,7 @@ const mockPosts: CommunityPost[] = [
     author: "건강지킴이",
     likeCount: 32,
     commentCount: 14,
-    createdAt: "2024-03-02",
+    createdAt: "2026-05-22",
     region: "부산",
   },
   {
@@ -69,7 +70,7 @@ const mockPosts: CommunityPost[] = [
     author: "여행가",
     likeCount: 28,
     commentCount: 9,
-    createdAt: "2024-03-01",
+    createdAt: "2026-05-21",
     region: "강원",
   },
   {
@@ -80,7 +81,7 @@ const mockPosts: CommunityPost[] = [
     author: "그림쟁이",
     likeCount: 20,
     commentCount: 7,
-    createdAt: "2024-03-01",
+    createdAt: "2026-05-21",
     region: "서울",
   },
   {
@@ -91,7 +92,7 @@ const mockPosts: CommunityPost[] = [
     author: "현명한투자",
     likeCount: 45,
     commentCount: 22,
-    createdAt: "2024-02-29",
+    createdAt: "2026-05-19",
     region: "경기",
   },
   {
@@ -102,7 +103,7 @@ const mockPosts: CommunityPost[] = [
     author: "행복할머니",
     likeCount: 38,
     commentCount: 11,
-    createdAt: "2024-02-29",
+    createdAt: "2026-05-19",
     region: "대전",
   },
 ];
@@ -125,74 +126,101 @@ export default function CommunityPage() {
   );
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">💬 커뮤니티</h1>
+    <div className="space-y-5 p-5">
+      <header className="flex items-center justify-between pt-2">
+        <h1 className="text-3xl font-extrabold text-mocha-900 tracking-tight">커뮤니티</h1>
         <Link href="/community/write">
           <Button size="sm">
-            <PencilSimple size={16} className="mr-1" /> 글쓰기
+            <PencilSimple size={18} weight="bold" />
+            글쓰기
           </Button>
         </Link>
-      </div>
+      </header>
 
-      {/* Category Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {CATEGORIES.map((cat) => (
-          <Button
-            key={cat.key}
-            variant={selectedCategory === cat.key ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedCategory(cat.key)}
-          >
-            {cat.label}
-          </Button>
-        ))}
+      {/* Category chips */}
+      <div className="-mx-5 overflow-x-auto pb-1">
+        <div className="flex gap-2 px-5">
+          {CATEGORIES.map((cat) => {
+            const isActive = selectedCategory === cat.key;
+            return (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => setSelectedCategory(cat.key)}
+                aria-pressed={isActive}
+                className={`shrink-0 min-h-[44px] rounded-full border-2 px-4 text-base font-bold transition-all active:scale-[0.97] focus:outline-none focus:ring-4 focus:ring-coral-200 ${
+                  isActive
+                    ? "bg-coral-500 border-coral-500 text-white shadow-warm"
+                    : "bg-white border-mocha-200 text-mocha-900 hover:border-coral-400"
+                }`}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Sort */}
-      <div className="flex gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
+      <div className="flex gap-1 border-b-2 border-mocha-100" role="tablist" aria-label="정렬 방법">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={sortBy === "latest"}
           onClick={() => setSortBy("latest")}
-          className={sortBy === "latest" ? "text-orange-500" : "text-gray-400"}
+          className={`relative inline-flex items-center gap-1.5 px-4 py-3 text-base font-bold transition-colors after:absolute after:bottom-[-2px] after:left-3 after:right-3 after:h-1 after:rounded-full ${
+            sortBy === "latest"
+              ? "text-coral-700 after:bg-coral-500"
+              : "text-mocha-600 after:bg-transparent hover:text-mocha-900"
+          }`}
         >
-          <Clock size={16} className="mr-1" /> 최신순
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
+          <Clock size={20} weight="duotone" /> 최신순
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={sortBy === "popular"}
           onClick={() => setSortBy("popular")}
-          className={sortBy === "popular" ? "text-orange-500" : "text-gray-400"}
+          className={`relative inline-flex items-center gap-1.5 px-4 py-3 text-base font-bold transition-colors after:absolute after:bottom-[-2px] after:left-3 after:right-3 after:h-1 after:rounded-full ${
+            sortBy === "popular"
+              ? "text-coral-700 after:bg-coral-500"
+              : "text-mocha-600 after:bg-transparent hover:text-mocha-900"
+          }`}
         >
-          <Fire size={16} className="mr-1" /> 인기순
-        </Button>
+          <Fire size={20} weight="duotone" /> 인기순
+        </button>
       </div>
 
       {/* Posts */}
-      <div className="space-y-3">
+      <div className="stagger-children space-y-3">
         {sorted.map((post) => (
-          <Link key={post.id} href={`/community/${post.id}`}>
-            <Card className="hover:shadow-md transition-shadow mb-3">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge className={CATEGORY_COLORS[post.category] ?? ""}>
+          <Link key={post.id} href={`/community/${post.id}`} className="block animate-fade-up">
+            <Card className="transition-all hover:border-coral-200 hover:shadow-soft">
+              <CardContent className="p-5">
+                <div className="mb-2 flex items-center gap-2">
+                  <Badge className={CATEGORY_BADGE[post.category] ?? ""}>
                     {getCategoryLabel(post.category)}
                   </Badge>
-                  <span className="text-xs text-gray-400">{post.region}</span>
+                  <span className="text-sm font-semibold text-mocha-700">{post.region}</span>
                 </div>
-                <h3 className="text-base font-semibold text-gray-900">{post.title}</h3>
-                <p className="mt-1 text-sm text-gray-500 line-clamp-2">{post.content}</p>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-sm text-gray-400">
+                <h3 className="text-lg font-extrabold text-mocha-900 leading-snug tracking-tight">
+                  {post.title}
+                </h3>
+                <p className="mt-2 text-base text-mocha-700 leading-relaxed line-clamp-2">
+                  {post.content}
+                </p>
+                <div className="mt-4 flex items-center justify-between border-t border-mocha-100 pt-3">
+                  <span className="text-base font-semibold text-mocha-700">
                     {post.author} · {post.createdAt}
                   </span>
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <ThumbsUp size={14} /> {post.likeCount}
+                  <div className="flex items-center gap-4 text-base font-semibold text-mocha-700">
+                    <span className="inline-flex items-center gap-1">
+                      <ThumbsUp size={18} weight="duotone" className="text-coral-500" />
+                      {post.likeCount}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <ChatCircle size={14} /> {post.commentCount}
+                    <span className="inline-flex items-center gap-1">
+                      <ChatCircle size={18} weight="duotone" className="text-sage-600" />
+                      {post.commentCount}
                     </span>
                   </div>
                 </div>

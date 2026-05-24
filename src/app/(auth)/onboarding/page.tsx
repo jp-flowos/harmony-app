@@ -1,10 +1,13 @@
 "use client";
 
+import { ArrowLeft, ArrowRight, Heart, MapPin, Sparkle, UsersThree } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Greeting } from "@/components/ui/greeting";
+import { StepIndicator } from "@/components/ui/step-indicator";
 
 const regions = [
   "서울",
@@ -71,93 +74,107 @@ export default function OnboardingPage() {
     );
   };
 
+  const currentNum = step === "region" ? 1 : step === "hobby" ? 2 : 3;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-center">
-          {step === "region" && "지역을 선택해주세요"}
-          {step === "hobby" && "취미를 선택해주세요"}
-          {step === "club" && "추천 클럽"}
-        </CardTitle>
-        <div
-          className="flex justify-center gap-2 pt-3"
-          role="progressbar"
-          aria-valuenow={["region", "hobby", "club"].indexOf(step) + 1}
-          aria-valuemin={1}
-          aria-valuemax={3}
-          aria-label="시작하기 진행 단계"
-        >
-          {(["region", "hobby", "club"] as Step[]).map((s, i) => (
-            <div
-              key={s}
-              className={`h-2.5 w-16 rounded-full transition-colors ${
-                i <= ["region", "hobby", "club"].indexOf(step) ? "bg-orange-500" : "bg-gray-200"
-              }`}
-            />
-          ))}
+    <Card className="overflow-hidden">
+      <CardContent className="p-7 sm:p-8">
+        <div className="mb-7 flex justify-center">
+          <StepIndicator
+            steps={[{ label: "지역" }, { label: "취미" }, { label: "클럽" }]}
+            current={currentNum}
+            ariaLabel="시작하기 진행 단계"
+          />
         </div>
-      </CardHeader>
-      <CardContent>
+
         {step === "region" && (
-          <div className="space-y-4">
+          <>
+            <Greeting
+              icon={<MapPin size={32} weight="duotone" />}
+              title="어디에 살고 계신가요?"
+              subtitle="가까운 지역의 모임을 추천해드려요"
+              className="mb-6"
+            />
             <div className="grid grid-cols-3 gap-3">
-              {regions.map((region) => (
-                <Button
-                  key={region}
-                  variant={selectedRegion === region ? "default" : "outline"}
-                  onClick={() => setSelectedRegion(region)}
-                  aria-pressed={selectedRegion === region}
-                >
-                  {region}
-                </Button>
-              ))}
+              {regions.map((region) => {
+                const isActive = selectedRegion === region;
+                return (
+                  <button
+                    key={region}
+                    type="button"
+                    onClick={() => setSelectedRegion(region)}
+                    aria-pressed={isActive}
+                    className={`min-h-[56px] rounded-2xl border-2 text-lg font-bold transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-4 focus:ring-coral-200 ${
+                      isActive
+                        ? "bg-coral-500 border-coral-500 text-white shadow-warm"
+                        : "bg-white border-mocha-200 text-mocha-900 hover:border-coral-400 hover:bg-coral-50"
+                    }`}
+                  >
+                    {region}
+                  </button>
+                );
+              })}
             </div>
-            <Button
-              className="w-full"
-              size="lg"
-              disabled={!selectedRegion}
-              onClick={() => setStep("hobby")}
-            >
-              다음
-            </Button>
-          </div>
+            <div className="mt-7">
+              <Button
+                className="w-full"
+                size="lg"
+                disabled={!selectedRegion}
+                onClick={() => setStep("hobby")}
+              >
+                다음 단계로
+                <ArrowRight size={24} weight="bold" />
+              </Button>
+            </div>
+          </>
         )}
 
         {step === "hobby" && (
-          <div className="space-y-6">
-            <p className="text-center text-lg text-gray-700 font-medium">3개 이상 선택해주세요</p>
-            {hobbyCategories.map((cat) => (
-              <div key={cat.category} className="space-y-3">
-                <h4 className="text-lg font-bold text-gray-900">{cat.category}</h4>
-                <div className="flex flex-wrap gap-3">
-                  {cat.items.map((hobby) => {
-                    const isSelected = selectedHobbies.includes(hobby);
-                    return (
-                      <button
-                        key={hobby}
-                        type="button"
-                        onClick={() => toggleHobby(hobby)}
-                        aria-pressed={isSelected}
-                        className={`min-h-[48px] rounded-full px-5 py-3 text-lg font-semibold transition-colors focus:outline-none focus:ring-4 focus:ring-orange-200 ${
-                          isSelected
-                            ? "bg-orange-500 text-white border-2 border-orange-500"
-                            : "bg-white text-gray-900 border-2 border-gray-300 hover:border-orange-400 hover:bg-orange-50"
-                        }`}
-                      >
-                        {hobby}
-                      </button>
-                    );
-                  })}
+          <>
+            <Greeting
+              icon={<Heart size={32} weight="duotone" />}
+              title="어떤 활동을 좋아하시나요?"
+              subtitle={`관심 있는 활동을 3개 이상 골라주세요 · ${selectedHobbies.length}개 선택됨`}
+              className="mb-6"
+            />
+            <div className="space-y-6">
+              {hobbyCategories.map((cat) => (
+                <div key={cat.category} className="space-y-3">
+                  <h4 className="flex items-center gap-2 text-lg font-extrabold text-mocha-900">
+                    <span className="h-5 w-1 rounded-full bg-coral-500" />
+                    {cat.category}
+                  </h4>
+                  <div className="flex flex-wrap gap-2.5">
+                    {cat.items.map((hobby) => {
+                      const isSelected = selectedHobbies.includes(hobby);
+                      return (
+                        <button
+                          key={hobby}
+                          type="button"
+                          onClick={() => toggleHobby(hobby)}
+                          aria-pressed={isSelected}
+                          className={`min-h-[52px] rounded-full border-2 px-5 text-lg font-bold transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-4 focus:ring-coral-200 ${
+                            isSelected
+                              ? "bg-coral-500 border-coral-500 text-white shadow-warm"
+                              : "bg-white border-mocha-200 text-mocha-900 hover:border-coral-400 hover:bg-coral-50"
+                          }`}
+                        >
+                          {hobby}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
-            <div className="flex gap-3 pt-2">
+              ))}
+            </div>
+            <div className="mt-8 flex gap-3">
               <Button
                 variant="outline"
                 size="lg"
                 className="flex-1"
                 onClick={() => setStep("region")}
               >
+                <ArrowLeft size={24} weight="bold" />
                 이전
               </Button>
               <Button
@@ -167,35 +184,46 @@ export default function OnboardingPage() {
                 onClick={() => setStep("club")}
               >
                 다음 ({selectedHobbies.length}/3)
+                <ArrowRight size={24} weight="bold" />
               </Button>
             </div>
-          </div>
+          </>
         )}
 
         {step === "club" && (
-          <div className="space-y-4">
-            <p className="text-center text-lg text-gray-700 font-medium">
-              관심사에 맞는 클럽을 추천해드려요
-            </p>
-            {sampleClubs.map((club) => (
-              <div
-                key={club.id}
-                className="rounded-2xl border-2 border-gray-200 p-5 space-y-3 hover:border-orange-300 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h4 className="text-xl font-bold text-gray-900 leading-snug">{club.name}</h4>
-                  <Badge variant="secondary">{club.category}</Badge>
+          <>
+            <Greeting
+              icon={<UsersThree size={32} weight="duotone" />}
+              title="이런 모임은 어떠세요?"
+              subtitle="관심사에 맞춰 추천해드린 모임이에요"
+              className="mb-6"
+            />
+            <div className="stagger-children space-y-3">
+              {sampleClubs.map((club) => (
+                <div
+                  key={club.id}
+                  className="animate-fade-up rounded-2xl border-2 border-mocha-100 bg-white p-5 transition-all hover:border-coral-300 hover:shadow-soft"
+                >
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <h4 className="text-xl font-extrabold text-mocha-900 leading-snug tracking-tight">
+                      {club.name}
+                    </h4>
+                    <Badge variant="secondary">{club.category}</Badge>
+                  </div>
+                  <p className="mb-4 text-lg text-mocha-700 leading-relaxed">{club.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 text-base font-semibold text-mocha-700">
+                      <UsersThree size={20} weight="duotone" className="text-coral-500" />
+                      멤버 {club.members}명
+                    </span>
+                    <Button size="sm">가입하기</Button>
+                  </div>
                 </div>
-                <p className="text-lg text-gray-700 leading-relaxed">{club.description}</p>
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-base text-gray-700 font-medium">멤버 {club.members}명</span>
-                  <Button size="sm">가입하기</Button>
-                </div>
-              </div>
-            ))}
-            <div className="flex gap-3 pt-4">
+              ))}
+            </div>
+            <div className="mt-8 flex gap-3">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="lg"
                 className="flex-1"
                 onClick={() => router.push("/club")}
@@ -203,10 +231,11 @@ export default function OnboardingPage() {
                 건너뛰기
               </Button>
               <Button className="flex-1" size="lg" onClick={() => router.push("/club")}>
+                <Sparkle size={24} weight="fill" />
                 완료
               </Button>
             </div>
-          </div>
+          </>
         )}
       </CardContent>
     </Card>

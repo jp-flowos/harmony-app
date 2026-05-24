@@ -1,12 +1,23 @@
 "use client";
 
-import { CheckCircle, Eye, EyeSlash, WarningCircle } from "@phosphor-icons/react";
+import {
+  EnvelopeSimple,
+  Eye,
+  EyeSlash,
+  Hand,
+  Lock,
+  Sparkle,
+  User,
+  WarningCircle,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Greeting } from "@/components/ui/greeting";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StepIndicator } from "@/components/ui/step-indicator";
 import { createClient } from "@/lib/supabase/client";
 
 type Step = "info" | "complete";
@@ -31,14 +42,12 @@ export default function RegisterPage() {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: { nickname },
-        },
+        options: { data: { nickname } },
       });
 
       if (signUpError) {
         if (signUpError.message.includes("already registered")) {
-          setError("이미 가입된 이메일입니다. 로그인 해주세요.");
+          setError("이미 가입된 이메일이에요. 로그인 해주세요.");
         } else {
           setError(signUpError.message);
         }
@@ -51,9 +60,7 @@ export default function RegisterPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: data.user.id, nickname }),
         });
-        if (!res.ok) {
-          console.error("Profile creation error:", await res.text());
-        }
+        if (!res.ok) console.error("Profile creation error:", await res.text());
       }
 
       setStep("complete");
@@ -63,73 +70,62 @@ export default function RegisterPage() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-center">회원가입</CardTitle>
-        <div
-          className="flex justify-center gap-2 pt-3"
-          role="progressbar"
-          aria-valuenow={step === "info" ? 1 : 2}
-          aria-valuemin={1}
-          aria-valuemax={2}
-          aria-label="회원가입 진행 단계"
-        >
-          {(["info", "complete"] as Step[]).map((s, i) => (
-            <div
-              key={s}
-              className={`h-2.5 w-24 rounded-full transition-colors ${
-                i <= ["info", "complete"].indexOf(step) ? "bg-orange-500" : "bg-gray-200"
-              }`}
-            />
-          ))}
+    <Card className="overflow-hidden">
+      <CardContent className="p-7 sm:p-8">
+        <div className="mb-6 flex justify-center">
+          <StepIndicator
+            steps={[{ label: "정보" }, { label: "완료" }]}
+            current={step === "info" ? 1 : 2}
+            ariaLabel="회원가입 진행 단계"
+          />
         </div>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <div
-            role="alert"
-            className="mb-5 flex items-start gap-3 rounded-xl border-2 border-red-200 bg-red-50 p-4 text-base font-medium text-red-700"
-          >
-            <WarningCircle size={24} weight="fill" className="mt-0.5 shrink-0 text-red-600" />
-            <span>{error}</span>
-          </div>
-        )}
+
+        {error && <ErrorBanner message={error} />}
 
         {step === "info" && (
-          <form className="space-y-6" onSubmit={handleRegister} noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="nickname">닉네임</Label>
-              <Input
-                id="nickname"
-                placeholder="예: 행복한하루"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                autoComplete="nickname"
-                required
-                aria-describedby="nickname-help"
-              />
-              <p id="nickname-help" className="text-sm text-gray-600">
-                다른 회원에게 보여지는 이름입니다
-              </p>
-            </div>
+          <>
+            <Greeting
+              icon={<Hand size={32} weight="duotone" />}
+              title="안녕하세요! 만나서 반가워요"
+              subtitle="간단한 정보로 시작할 수 있어요"
+              className="mb-7"
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="reg-email">이메일</Label>
-              <Input
-                id="reg-email"
-                type="email"
-                inputMode="email"
-                placeholder="example@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-              />
-            </div>
+            <form className="stagger-children space-y-6" onSubmit={handleRegister} noValidate>
+              <div className="space-y-2 animate-fade-up">
+                <Label htmlFor="nickname">닉네임</Label>
+                <Input
+                  id="nickname"
+                  placeholder="예: 행복한하루"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  autoComplete="nickname"
+                  required
+                  leadingIcon={<User size={26} weight="duotone" />}
+                  aria-describedby="nickname-help"
+                />
+                <p id="nickname-help" className="px-1 text-base text-mocha-700">
+                  다른 분들이 보는 이름이에요
+                </p>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reg-password">비밀번호</Label>
-              <div className="relative">
+              <div className="space-y-2 animate-fade-up">
+                <Label htmlFor="reg-email">이메일</Label>
+                <Input
+                  id="reg-email"
+                  type="email"
+                  inputMode="email"
+                  placeholder="example@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                  leadingIcon={<EnvelopeSimple size={26} weight="duotone" />}
+                />
+              </div>
+
+              <div className="space-y-2 animate-fade-up">
+                <Label htmlFor="reg-password">비밀번호</Label>
                 <Input
                   id="reg-password"
                   type={showPassword ? "text" : "password"}
@@ -139,65 +135,84 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   minLength={8}
                   required
-                  className="pr-14"
+                  leadingIcon={<Lock size={26} weight="duotone" />}
+                  trailingAction={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                      aria-pressed={showPassword}
+                      className="flex h-12 w-12 items-center justify-center rounded-xl text-mocha-700 transition-colors hover:bg-cream-100 active:bg-cream-200 focus:outline-none focus:ring-4 focus:ring-coral-200"
+                    >
+                      {showPassword ? <EyeSlash size={24} /> : <Eye size={24} />}
+                    </button>
+                  }
                   aria-describedby="password-help"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-                  aria-pressed={showPassword}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 active:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-orange-100"
-                >
-                  {showPassword ? <EyeSlash size={24} /> : <Eye size={24} />}
-                </button>
+                <p id="password-help" className="px-1 text-base text-mocha-700">
+                  기억하기 쉽고 안전한 비밀번호를 만들어주세요
+                </p>
               </div>
-              <p id="password-help" className="text-sm text-gray-600">
-                기억하기 쉽고 안전한 비밀번호를 만들어주세요
-              </p>
-            </div>
 
-            <Button className="w-full" size="lg" type="submit" disabled={loading}>
-              {loading ? "가입 중입니다..." : "가입하기"}
-            </Button>
-          </form>
-        )}
-
-        {step === "complete" && (
-          <div className="space-y-6 py-6 text-center">
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-green-100">
-              <CheckCircle size={56} weight="fill" className="text-green-600" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900">가입을 환영합니다</h3>
-              <p className="mt-3 text-lg text-gray-700 leading-relaxed">
-                이제 하모니에서 새로운
-                <br />
-                친구를 만나보세요
-              </p>
-            </div>
-            <Link href="/onboarding" className="block">
-              <Button className="w-full" size="lg" asChild>
-                <span>시작하기</span>
+              <Button className="w-full animate-fade-up" size="lg" type="submit" disabled={loading}>
+                {loading ? "가입 중이에요..." : "가입하고 시작하기"}
               </Button>
-            </Link>
-          </div>
+            </form>
+
+            <div className="mt-7 border-t border-mocha-100 pt-6 text-center">
+              <p className="text-lg text-mocha-700">
+                이미 회원이신가요?{" "}
+                <Link
+                  href="/login"
+                  className="font-bold text-coral-700 underline decoration-2 underline-offset-4 hover:text-coral-800"
+                >
+                  로그인
+                </Link>
+              </p>
+            </div>
+          </>
         )}
 
-        {step === "info" && (
-          <div className="mt-6 border-t border-gray-100 pt-6 text-center">
-            <p className="text-lg text-gray-700">
-              이미 회원이신가요?{" "}
-              <Link
-                href="/login"
-                className="font-bold text-orange-600 underline underline-offset-4 hover:text-orange-700"
-              >
-                로그인
-              </Link>
-            </p>
-          </div>
-        )}
+        {step === "complete" && <CompleteStep />}
       </CardContent>
     </Card>
+  );
+}
+
+function CompleteStep() {
+  return (
+    <div className="flex flex-col items-center gap-6 py-6 text-center animate-fade-up">
+      <div className="relative">
+        <div className="absolute inset-0 animate-pulse rounded-full bg-coral-200/40 blur-xl" />
+        <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-coral-400 to-coral-600 shadow-warm">
+          <Sparkle size={56} weight="fill" className="text-white" />
+        </div>
+      </div>
+      <div>
+        <h3 className="text-3xl font-extrabold text-mocha-900 tracking-tight">가입을 환영해요</h3>
+        <p className="mt-3 text-lg text-mocha-700 leading-relaxed">
+          이제 하모니에서
+          <br />
+          새로운 친구를 만나보세요
+        </p>
+      </div>
+      <Link href="/onboarding" className="block w-full">
+        <Button className="w-full" size="lg" asChild>
+          <span>시작하기</span>
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div
+      role="alert"
+      className="mb-5 flex items-start gap-3 rounded-2xl border-2 border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] p-4 text-base font-medium text-[var(--color-danger)]"
+    >
+      <WarningCircle size={26} weight="fill" className="mt-0.5 shrink-0" />
+      <span className="pt-0.5">{message}</span>
+    </div>
   );
 }

@@ -63,11 +63,11 @@ const TYPE_LABELS: Record<string, string> = {
   community: "커뮤니티",
 };
 
-const TYPE_COLORS: Record<string, string> = {
-  club: "bg-orange-100 text-orange-700",
-  meeting: "bg-blue-100 text-blue-700",
-  info: "bg-green-100 text-green-700",
-  community: "bg-purple-100 text-purple-700",
+const TYPE_BADGE: Record<string, string> = {
+  club: "bg-coral-100 text-coral-800",
+  meeting: "bg-[var(--color-info-bg)] text-[var(--color-info)]",
+  info: "bg-sage-100 text-sage-700",
+  community: "bg-cream-100 text-mocha-800",
 };
 
 function getResultHref(result: SearchResult): string {
@@ -136,36 +136,36 @@ export default function SearchPage() {
       return (
         <EmptyState
           icon="search"
-          title="검색 결과가 없습니다"
-          description="다른 키워드로 검색해 보세요"
+          title="검색 결과가 없어요"
+          description="다른 단어로 검색해 보세요"
         />
       );
     }
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {items.map((item) => (
-          <Link key={`${item.type}-${item.id}`} href={getResultHref(item)}>
-            <Card className="hover:shadow-sm transition-shadow mb-2">
+          <Link key={`${item.type}-${item.id}`} href={getResultHref(item)} className="block">
+            <Card className="transition-all hover:border-coral-200 hover:shadow-soft">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span
-                        className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${TYPE_COLORS[item.type]}`}
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-sm font-bold ${TYPE_BADGE[item.type] ?? ""}`}
                       >
                         {TYPE_LABELS[item.type]}
                       </span>
-                      {item.category && (
-                        <Badge variant="outline" className="text-xs">
-                          {item.category}
-                        </Badge>
-                      )}
+                      {item.category && <Badge variant="outline">{item.category}</Badge>}
                     </div>
-                    <h3 className="text-base font-semibold text-gray-900 truncate">{item.title}</h3>
-                    <p className="mt-1 text-sm text-gray-500 line-clamp-1">{item.description}</p>
+                    <h3 className="text-lg font-extrabold text-mocha-900 truncate tracking-tight">
+                      {item.title}
+                    </h3>
+                    <p className="mt-1 text-base text-mocha-700 leading-relaxed line-clamp-1">
+                      {item.description}
+                    </p>
                   </div>
-                  <ArrowRight size={16} className="text-gray-300 mt-2 shrink-0" />
+                  <ArrowRight size={20} weight="bold" className="mt-2 shrink-0 text-coral-500" />
                 </div>
               </CardContent>
             </Card>
@@ -176,44 +176,44 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">검색</h1>
+    <div className="space-y-5 p-5">
+      <h1 className="pt-2 text-3xl font-extrabold text-mocha-900 tracking-tight">검색</h1>
 
-      {/* Search Input */}
-      <form onSubmit={handleSubmit} className="relative">
-        <MagnifyingGlass
-          size={20}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-        />
+      {/* Search input */}
+      <form onSubmit={handleSubmit}>
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="클럽, 모임, 정보글 검색..."
-          className="pl-10 pr-10"
+          placeholder="클럽, 모임, 정보를 검색"
+          autoFocus
+          leadingIcon={<MagnifyingGlass size={26} weight="bold" />}
+          trailingAction={
+            query ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setResults(null);
+                }}
+                aria-label="검색어 지우기"
+                className="flex h-12 w-12 items-center justify-center rounded-xl text-mocha-700 transition-colors hover:bg-cream-100 active:bg-cream-200 focus:outline-none focus:ring-4 focus:ring-coral-200"
+              >
+                <X size={22} weight="bold" />
+              </button>
+            ) : null
+          }
         />
-        {query && (
-          <button
-            type="button"
-            onClick={() => {
-              setQuery("");
-              setResults(null);
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            <X size={16} />
-          </button>
-        )}
       </form>
 
-      {/* Recent Searches */}
+      {/* Recent searches */}
       {!results && recentSearches.length > 0 && (
         <section>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-gray-500">최근 검색어</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-extrabold text-mocha-900">최근 검색어</h2>
             <button
               type="button"
               onClick={handleClearRecent}
-              className="text-xs text-gray-400 hover:text-gray-600"
+              className="text-base font-semibold text-mocha-700 hover:text-mocha-900"
             >
               전체 삭제
             </button>
@@ -224,9 +224,9 @@ export default function SearchPage() {
                 type="button"
                 key={q}
                 onClick={() => handleRecentClick(q)}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                className="flex min-h-[44px] items-center gap-1.5 rounded-full bg-cream-100 px-4 text-base font-semibold text-mocha-900 transition-colors hover:bg-cream-200 active:scale-[0.97] focus:outline-none focus:ring-4 focus:ring-coral-200"
               >
-                <Clock size={12} />
+                <Clock size={18} weight="duotone" className="text-mocha-700" />
                 {q}
               </button>
             ))}
@@ -236,16 +236,20 @@ export default function SearchPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="flex justify-center py-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+        <div className="flex justify-center py-12">
+          <output
+            aria-label="검색 중"
+            className="block h-10 w-10 animate-spin rounded-full border-4 border-coral-500 border-t-transparent"
+          />
         </div>
       )}
 
       {/* Results */}
       {results && !loading && (
         <div>
-          <p className="text-sm text-gray-500 mb-3">
-            &quot;{results.query}&quot; 검색 결과 {results.total}건
+          <p className="mb-3 text-base font-semibold text-mocha-700">
+            <strong className="font-extrabold text-mocha-900">&quot;{results.query}&quot;</strong>{" "}
+            검색 결과 {results.total}건
           </p>
 
           <Tabs value={tab} onValueChange={setTab}>
@@ -258,28 +262,20 @@ export default function SearchPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all" className="mt-3">
-              {renderResults(results.results)}
-            </TabsContent>
-            <TabsContent value="clubs" className="mt-3">
-              {renderResults(results.grouped.clubs)}
-            </TabsContent>
-            <TabsContent value="info" className="mt-3">
-              {renderResults(results.grouped.info)}
-            </TabsContent>
-            <TabsContent value="community" className="mt-3">
-              {renderResults(results.grouped.community)}
-            </TabsContent>
+            <TabsContent value="all">{renderResults(results.results)}</TabsContent>
+            <TabsContent value="clubs">{renderResults(results.grouped.clubs)}</TabsContent>
+            <TabsContent value="info">{renderResults(results.grouped.info)}</TabsContent>
+            <TabsContent value="community">{renderResults(results.grouped.community)}</TabsContent>
           </Tabs>
         </div>
       )}
 
-      {/* Initial State */}
+      {/* Initial empty state */}
       {!results && !loading && recentSearches.length === 0 && (
         <EmptyState
           icon="search"
           title="무엇을 찾고 계신가요?"
-          description="클럽, 모임, 정보글을 한 번에 검색하세요"
+          description="클럽, 모임, 정보를 한 번에 검색하세요"
         />
       )}
     </div>

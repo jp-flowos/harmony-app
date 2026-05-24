@@ -1,8 +1,15 @@
 import {
+  ArrowRight,
+  CaretRight,
+  ChatCircleDots,
   Eye,
   Fire,
+  Hand,
+  Heart,
   MagnifyingGlass,
+  Mountains,
   Newspaper,
+  PaintBrush,
   Sparkle,
   Star,
   UserCirclePlus,
@@ -18,7 +25,6 @@ function getToday(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Popular clubs (mock — would query by view count)
 const popularClubs = [
   { id: "1", name: "서울 등산 모임", category: "등산", members: 45, coverEmoji: "⛰️", views: 320 },
   { id: "2", name: "골프 친구들", category: "골프", members: 32, coverEmoji: "⛳", views: 280 },
@@ -27,7 +33,7 @@ const popularClubs = [
 
 const recommendedInfos = [
   { id: "1", title: "봄철 건강 관리 가이드", category: "건강", views: 520 },
-  { id: "2", title: "2024 정부 지원금 총정리", category: "정부지원", views: 1200 },
+  { id: "2", title: "2026 정부 지원금 총정리", category: "정부지원", views: 1200 },
   { id: "3", title: "시니어를 위한 스마트폰 활용법", category: "정보", views: 890 },
 ];
 
@@ -39,216 +45,238 @@ const popularPosts = [
 
 const fortuneScoreStars = [1, 2, 3, 4, 5] as const;
 
-// 개인화 추천 (mock — would come from /api/recommendations)
 const personalRecommendations = [
-  { id: "r1", name: "서울 등산 모임", category: "등산", reason: "관심 취미와 일치", members: 45 },
-  { id: "r2", name: "골프 친구들", category: "골프", reason: "같은 지역 · 인기 모임", members: 32 },
+  {
+    id: "r1",
+    name: "서울 등산 모임",
+    category: "등산",
+    reason: "관심 취미와 일치",
+    members: 45,
+    icon: Mountains,
+  },
+  {
+    id: "r2",
+    name: "골프 친구들",
+    category: "골프",
+    reason: "같은 지역 · 인기 모임",
+    members: 32,
+    icon: Sparkle,
+  },
   {
     id: "r3",
     name: "서울 독서 모임",
     category: "독서",
     reason: "비슷한 취미 회원들이 활동 중",
     members: 28,
+    icon: PaintBrush,
   },
 ];
 
 export default function HomePage() {
   const today = getToday();
-  // Show a random zodiac fortune preview on home
   const previewZodiac = ZODIAC_ANIMALS[new Date().getDay() % ZODIAC_ANIMALS.length];
   const fortune = generateFortune(today, previewZodiac);
 
   return (
-    <div className="space-y-6 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between pt-2">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">안녕하세요! 👋</h1>
-          <p className="mt-1 text-base text-gray-500">오늘도 즐거운 하루 보내세요</p>
+    <div className="space-y-7 p-5 pb-6">
+      {/* Welcome header */}
+      <header className="flex items-start justify-between pt-3">
+        <div className="flex items-start gap-3">
+          <span aria-hidden="true" className="mt-1 text-coral-500">
+            <Hand size={32} weight="duotone" />
+          </span>
+          <div>
+            <h1 className="text-2xl font-extrabold text-mocha-900 tracking-tight leading-snug">
+              안녕하세요!
+            </h1>
+            <p className="mt-1 text-lg text-mocha-700">오늘도 즐거운 하루 보내세요</p>
+          </div>
         </div>
-        <Link href="/search">
+        <Link href="/search" aria-label="검색">
           <Button variant="ghost" size="icon" className="rounded-full">
-            <MagnifyingGlass size={24} className="text-gray-600" />
+            <MagnifyingGlass size={26} weight="bold" className="text-mocha-800" />
           </Button>
         </Link>
-      </div>
+      </header>
 
-      {/* Onboarding Banner for new users */}
-      <Card className="bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200">
-        <CardContent className="p-5">
-          <div className="flex items-center gap-3">
-            <Sparkle size={32} weight="fill" className="text-orange-400" />
+      {/* Onboarding banner */}
+      <Link href="/mypage/edit" className="block">
+        <Card className="border-coral-200 bg-gradient-to-br from-coral-50 to-cream-100 transition-all hover:shadow-warm">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-soft">
+              <Sparkle size={28} weight="fill" className="text-coral-500" />
+            </div>
             <div className="flex-1">
-              <p className="text-base font-semibold text-gray-900">
-                하모니에 오신 것을 환영합니다!
+              <p className="text-lg font-extrabold text-mocha-900 leading-snug">
+                프로필을 완성해보세요
               </p>
-              <p className="mt-1 text-sm text-gray-600">프로필을 완성하고 관심 클럽을 찾아보세요</p>
+              <p className="mt-0.5 text-base text-mocha-700">
+                나에게 맞는 모임을 더 잘 추천받을 수 있어요
+              </p>
             </div>
-            <Link href="/mypage/edit">
-              <Button size="sm" variant="outline">
-                시작하기
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Fortune Preview — Real Data */}
-      <Link href="/fortune">
-        <Card className="bg-gradient-to-r from-purple-50 to-orange-50 hover:shadow-md transition-shadow">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl shadow-sm">
-                {getZodiacEmoji(fortune.zodiac)}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold text-gray-900">
-                    {fortune.zodiac}띠 오늘의 운세
-                  </span>
-                  <div className="flex gap-0.5">
-                    {fortuneScoreStars.map((star) => (
-                      <Star
-                        key={star}
-                        size={14}
-                        weight={star <= fortune.score ? "fill" : "regular"}
-                        className={star <= fortune.score ? "text-yellow-400" : "text-gray-300"}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <p className="mt-1 text-sm text-gray-600 line-clamp-1">{fortune.general}</p>
-              </div>
-            </div>
+            <CaretRight size={24} weight="bold" className="text-coral-600 shrink-0" />
           </CardContent>
         </Card>
       </Link>
 
-      {/* Personalized Recommendations */}
-      <section>
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <UserCirclePlus size={24} className="text-orange-500" />
-            나를 위한 추천
-          </h2>
-          <Link href="/club" className="text-base text-orange-500 font-medium">
-            더보기
-          </Link>
-        </div>
-        <div className="mt-3 space-y-2">
-          {personalRecommendations.map((rec) => (
-            <Link key={rec.id} href={`/club/${rec.id}`}>
-              <Card className="hover:shadow-md transition-shadow mb-2 border-orange-100">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-xl">
-                    {rec.category === "등산" ? "⛰️" : rec.category === "골프" ? "⛳" : "📚"}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-semibold text-gray-900">{rec.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-xs">
-                        {rec.category}
-                      </Badge>
-                      <span className="text-xs text-orange-500">{rec.reason}</span>
+      {/* Fortune preview */}
+      <Link href="/fortune" className="block">
+        <Card className="border-sage-200 bg-gradient-to-br from-sage-50 to-cream-100 transition-all hover:shadow-soft">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white text-3xl shadow-soft">
+              {getZodiacEmoji(fortune.zodiac)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-extrabold text-mocha-900">
+                  {fortune.zodiac}띠 오늘의 운세
+                </span>
+              </div>
+              <div
+                role="img"
+                aria-label={`${fortune.score}점 만점에 5점`}
+                className="mt-1 flex gap-0.5"
+              >
+                {fortuneScoreStars.map((star) => (
+                  <Star
+                    key={star}
+                    size={18}
+                    weight={star <= fortune.score ? "fill" : "regular"}
+                    className={
+                      star <= fortune.score ? "text-[var(--color-warning)]" : "text-mocha-200"
+                    }
+                  />
+                ))}
+              </div>
+              <p className="mt-1.5 text-base text-mocha-700 line-clamp-1">{fortune.general}</p>
+            </div>
+            <CaretRight size={24} weight="bold" className="text-mocha-500 shrink-0" />
+          </CardContent>
+        </Card>
+      </Link>
+
+      {/* Personalized recommendations */}
+      <Section
+        icon={<UserCirclePlus size={26} weight="duotone" className="text-coral-600" />}
+        title="나를 위한 추천"
+        href="/club"
+      >
+        <div className="space-y-3">
+          {personalRecommendations.map((rec) => {
+            const Icon = rec.icon;
+            return (
+              <Link key={rec.id} href={`/club/${rec.id}`} className="block">
+                <Card className="transition-all hover:border-coral-200 hover:shadow-soft">
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-coral-50">
+                      <Icon size={28} weight="duotone" className="text-coral-600" />
                     </div>
-                  </div>
-                  <span className="flex items-center gap-0.5 text-xs text-gray-400">
-                    <UsersThree size={12} /> {rec.members}
-                  </span>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Popular Clubs (by views) */}
-      <section>
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Fire size={24} className="text-red-500" />
-            인기 모임
-          </h2>
-          <Link href="/club" className="text-base text-orange-500 font-medium">
-            전체보기
-          </Link>
-        </div>
-        <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
-          {popularClubs.map((club) => (
-            <Link key={club.id} href={`/club/${club.id}`} className="min-w-[160px]">
-              <Card className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4 text-center">
-                  <div className="text-4xl mb-2">{club.coverEmoji}</div>
-                  <h3 className="text-base font-semibold text-gray-900 truncate">{club.name}</h3>
-                  <Badge variant="secondary" className="mt-2">
-                    {club.category}
-                  </Badge>
-                  <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-400">
-                    <span className="flex items-center gap-0.5">
-                      <UsersThree size={12} /> {club.members}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-extrabold text-mocha-900 truncate">{rec.name}</h3>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <Badge variant="default">{rec.category}</Badge>
+                        <span className="text-sm font-semibold text-coral-700">{rec.reason}</span>
+                      </div>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 text-base font-semibold text-mocha-700">
+                      <UsersThree size={18} weight="duotone" />
+                      {rec.members}
                     </span>
-                    <span className="flex items-center gap-0.5">
-                      <Eye size={12} /> {club.views}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
-      </section>
+      </Section>
 
-      {/* Recommended Info Content */}
-      <section>
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Newspaper size={24} className="text-blue-500" />
-            추천 정보
-          </h2>
-          <Link href="/info" className="text-base text-orange-500 font-medium">
-            전체보기
-          </Link>
+      {/* Popular clubs (horizontal scroll) */}
+      <Section
+        icon={<Fire size={26} weight="duotone" className="text-[var(--color-danger)]" />}
+        title="인기 모임"
+        href="/club"
+        hint="옆으로 넘겨보세요"
+      >
+        <div className="-mx-5 overflow-x-auto pb-2">
+          <div className="flex gap-3 px-5">
+            {popularClubs.map((club) => (
+              <Link key={club.id} href={`/club/${club.id}`} className="min-w-[180px] block">
+                <Card className="transition-all hover:shadow-warm h-full">
+                  <CardContent className="flex h-full flex-col items-center gap-2 p-5 text-center">
+                    <div className="text-5xl mb-1">{club.coverEmoji}</div>
+                    <h3 className="text-lg font-extrabold text-mocha-900 leading-snug">
+                      {club.name}
+                    </h3>
+                    <Badge variant="default">{club.category}</Badge>
+                    <div className="mt-2 flex w-full items-center justify-center gap-3 border-t border-mocha-100 pt-3 text-base font-semibold text-mocha-700">
+                      <span className="flex items-center gap-1">
+                        <UsersThree size={16} weight="duotone" />
+                        {club.members}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye size={16} weight="duotone" />
+                        {club.views}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
-        <div className="mt-3 space-y-2">
+      </Section>
+
+      {/* Recommended info */}
+      <Section
+        icon={<Newspaper size={26} weight="duotone" className="text-sage-700" />}
+        title="추천 정보"
+        href="/info"
+      >
+        <div className="space-y-3">
           {recommendedInfos.map((info) => (
-            <Link key={info.id} href={`/info/${info.id}`}>
-              <Card className="hover:shadow-sm transition-shadow mb-2">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <Badge variant="outline" className="mb-1">
+            <Link key={info.id} href={`/info/${info.id}`} className="block">
+              <Card className="transition-all hover:border-sage-200 hover:shadow-soft">
+                <CardContent className="flex items-center justify-between gap-3 p-4">
+                  <div className="flex-1 min-w-0">
+                    <Badge variant="secondary" className="mb-1.5">
                       {info.category}
                     </Badge>
-                    <h3 className="text-base font-medium text-gray-900">{info.title}</h3>
+                    <h3 className="text-lg font-bold text-mocha-900 leading-snug">{info.title}</h3>
                   </div>
-                  <span className="flex items-center gap-1 text-xs text-gray-400">
-                    <Eye size={14} /> {info.views}
+                  <span className="inline-flex shrink-0 items-center gap-1 text-base font-semibold text-mocha-700">
+                    <Eye size={18} weight="duotone" />
+                    {info.views}
                   </span>
                 </CardContent>
               </Card>
             </Link>
           ))}
         </div>
-      </section>
+      </Section>
 
-      {/* Popular Community Posts */}
-      <section>
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">💬 커뮤니티</h2>
-          <Link href="/community" className="text-base text-orange-500 font-medium">
-            전체보기
-          </Link>
-        </div>
-        <div className="mt-3 space-y-3">
+      {/* Community */}
+      <Section
+        icon={<ChatCircleDots size={26} weight="duotone" className="text-coral-600" />}
+        title="커뮤니티"
+        href="/community"
+      >
+        <div className="space-y-3">
           {popularPosts.map((post) => (
-            <Link key={post.id} href={`/community/${post.id}`}>
-              <Card className="hover:shadow-md transition-shadow mb-2">
+            <Link key={post.id} href={`/community/${post.id}`} className="block">
+              <Card className="transition-all hover:border-coral-200 hover:shadow-soft">
                 <CardContent className="p-4">
-                  <h3 className="text-base font-semibold text-gray-900">{post.title}</h3>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm text-gray-400">{post.author}</span>
-                    <div className="flex items-center gap-3 text-sm text-gray-400">
-                      <span>❤️ {post.likes}</span>
-                      <span>💬 {post.comments}</span>
+                  <h3 className="text-lg font-bold text-mocha-900 leading-snug">{post.title}</h3>
+                  <div className="mt-3 flex items-center justify-between text-base">
+                    <span className="font-semibold text-mocha-700">{post.author}</span>
+                    <div className="flex items-center gap-4 text-mocha-700">
+                      <span className="inline-flex items-center gap-1 font-semibold">
+                        <Heart size={18} weight="duotone" className="text-coral-500" />
+                        {post.likes}
+                      </span>
+                      <span className="inline-flex items-center gap-1 font-semibold">
+                        <ChatCircleDots size={18} weight="duotone" className="text-sage-600" />
+                        {post.comments}
+                      </span>
                     </div>
                   </div>
                 </CardContent>
@@ -256,7 +284,41 @@ export default function HomePage() {
             </Link>
           ))}
         </div>
-      </section>
+      </Section>
     </div>
+  );
+}
+
+function Section({
+  icon,
+  title,
+  href,
+  hint,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  href: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between">
+        <h2 className="flex items-center gap-2 text-xl font-extrabold text-mocha-900 tracking-tight">
+          <span className="self-center">{icon}</span>
+          {title}
+        </h2>
+        <Link
+          href={href}
+          className="inline-flex items-center gap-0.5 text-base font-bold text-coral-700 hover:text-coral-800"
+        >
+          더보기
+          <ArrowRight size={18} weight="bold" />
+        </Link>
+      </div>
+      {hint && <p className="text-sm text-mocha-500">{hint}</p>}
+      {children}
+    </section>
   );
 }

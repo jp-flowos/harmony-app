@@ -19,11 +19,15 @@ interface InfoCategory {
 }
 
 const categories: InfoCategory[] = [
-  { key: "health", label: "건강", icon: <Heart size={20} /> },
-  { key: "finance", label: "재테크", icon: <CurrencyCircleDollar size={20} /> },
-  { key: "travel", label: "여행", icon: <Airplane size={20} /> },
-  { key: "hobby", label: "취미", icon: <GameController size={20} /> },
-  { key: "gov", label: "정부지원", icon: <Buildings size={20} /> },
+  { key: "health", label: "건강", icon: <Heart size={20} weight="duotone" /> },
+  {
+    key: "finance",
+    label: "재테크",
+    icon: <CurrencyCircleDollar size={20} weight="duotone" />,
+  },
+  { key: "travel", label: "여행", icon: <Airplane size={20} weight="duotone" /> },
+  { key: "hobby", label: "취미", icon: <GameController size={20} weight="duotone" /> },
+  { key: "gov", label: "정부지원", icon: <Buildings size={20} weight="duotone" /> },
 ];
 
 interface InfoArticle {
@@ -48,7 +52,7 @@ const articles: InfoArticle[] = [
     views: 1240,
     likes: 89,
     tags: ["건강검진", "시니어건강"],
-    date: "2024-03-01",
+    date: "2026-05-19",
   },
   {
     id: "i2",
@@ -59,7 +63,7 @@ const articles: InfoArticle[] = [
     views: 980,
     likes: 67,
     tags: ["관절", "운동"],
-    date: "2024-02-28",
+    date: "2026-05-18",
   },
   {
     id: "i3",
@@ -70,7 +74,7 @@ const articles: InfoArticle[] = [
     views: 2100,
     likes: 156,
     tags: ["재테크", "퇴직연금"],
-    date: "2024-03-02",
+    date: "2026-05-21",
   },
   {
     id: "i4",
@@ -81,7 +85,7 @@ const articles: InfoArticle[] = [
     views: 1560,
     likes: 112,
     tags: ["국내여행", "힐링"],
-    date: "2024-02-25",
+    date: "2026-05-15",
   },
   {
     id: "i5",
@@ -92,18 +96,18 @@ const articles: InfoArticle[] = [
     views: 870,
     likes: 45,
     tags: ["파크골프", "초보"],
-    date: "2024-03-03",
+    date: "2026-05-22",
   },
   {
     id: "i6",
     category: "gov",
-    title: "2024년 시니어 지원 정책 총정리",
+    title: "2026년 시니어 지원 정책 총정리",
     summary: "노인일자리, 돌봄서비스, 주거지원 등 핵심 정책을 정리했습니다.",
     author: "정책알리미",
     views: 3200,
     likes: 234,
     tags: ["정부지원", "복지"],
-    date: "2024-02-20",
+    date: "2026-05-10",
   },
   {
     id: "i7",
@@ -114,32 +118,36 @@ const articles: InfoArticle[] = [
     views: 4500,
     likes: 312,
     tags: ["기초연금", "복지"],
-    date: "2024-01-15",
+    date: "2026-04-15",
   },
 ];
 
 function ArticleCard({ article }: { article: InfoArticle }) {
   return (
-    <Link href={`/info/${article.id}`}>
-      <Card className="hover:shadow-md transition-shadow">
-        <CardContent className="p-4">
-          <h3 className="text-base font-semibold text-gray-900 line-clamp-2">{article.title}</h3>
-          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{article.summary}</p>
-          <div className="mt-3 flex items-center justify-between">
+    <Link href={`/info/${article.id}`} className="block">
+      <Card className="transition-all hover:border-coral-200 hover:shadow-soft">
+        <CardContent className="p-5">
+          <h3 className="text-lg font-extrabold text-mocha-900 leading-snug tracking-tight line-clamp-2">
+            {article.title}
+          </h3>
+          <p className="mt-2 text-base text-mocha-700 leading-relaxed line-clamp-2">
+            {article.summary}
+          </p>
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-mocha-100 pt-3">
             <div className="flex flex-wrap gap-1">
               {article.tags.slice(0, 2).map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs">
+                <Badge key={tag} variant="secondary">
                   {tag}
                 </Badge>
               ))}
             </div>
-            <div className="flex items-center gap-3 text-xs text-gray-400">
-              <span className="flex items-center gap-1">
-                <Eye size={14} />
+            <div className="flex items-center gap-3 text-base font-semibold text-mocha-700">
+              <span className="inline-flex items-center gap-1">
+                <Eye size={18} weight="duotone" />
                 {article.views}
               </span>
-              <span className="flex items-center gap-1">
-                <ThumbsUp size={14} />
+              <span className="inline-flex items-center gap-1">
+                <ThumbsUp size={18} weight="duotone" className="text-coral-500" />
                 {article.likes}
               </span>
             </div>
@@ -152,9 +160,11 @@ function ArticleCard({ article }: { article: InfoArticle }) {
 
 export default function InfoPage() {
   return (
-    <div className="space-y-4 p-4">
-      <h1 className="text-2xl font-bold text-gray-900">정보</h1>
-      <p className="text-base text-gray-500">시니어를 위한 유용한 정보를 모았어요</p>
+    <div className="space-y-5 p-5">
+      <div className="pt-2">
+        <h1 className="text-3xl font-extrabold text-mocha-900 tracking-tight">정보</h1>
+        <p className="mt-2 text-lg text-mocha-700">시니어를 위한 유용한 정보를 모았어요</p>
+      </div>
 
       <Tabs defaultValue="all">
         <TabsList className="flex-wrap">
@@ -162,23 +172,27 @@ export default function InfoPage() {
           {categories.map((cat) => (
             <TabsTrigger key={cat.key} value={cat.key}>
               {cat.icon}
-              <span className="ml-1">{cat.label}</span>
+              <span className="ml-1.5">{cat.label}</span>
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <TabsContent value="all" className="space-y-3 mt-3">
+        <TabsContent value="all" className="stagger-children space-y-3">
           {articles.map((article) => (
-            <ArticleCard key={article.id} article={article} />
+            <div key={article.id} className="animate-fade-up">
+              <ArticleCard article={article} />
+            </div>
           ))}
         </TabsContent>
 
         {categories.map((cat) => (
-          <TabsContent key={cat.key} value={cat.key} className="space-y-3 mt-3">
+          <TabsContent key={cat.key} value={cat.key} className="stagger-children space-y-3">
             {articles
               .filter((a) => a.category === cat.key)
               .map((article) => (
-                <ArticleCard key={article.id} article={article} />
+                <div key={article.id} className="animate-fade-up">
+                  <ArticleCard article={article} />
+                </div>
               ))}
           </TabsContent>
         ))}

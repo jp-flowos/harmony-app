@@ -27,9 +27,9 @@ export function BottomNav() {
   return (
     <nav
       aria-label="주요 메뉴"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-gray-200 bg-white safe-area-bottom shadow-[0_-2px_8px_rgba(0,0,0,0.04)]"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-mocha-100 bg-white/95 backdrop-blur-md safe-area-bottom shadow-[0_-2px_12px_rgba(61,46,34,0.06)]"
     >
-      <div className="mx-auto flex max-w-lg items-stretch justify-around">
+      <div className="mx-auto flex max-w-lg items-stretch justify-around px-1">
         {navItems.map((item) => {
           const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           const Icon = item.icon;
@@ -40,14 +40,34 @@ export function BottomNav() {
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 py-3 min-h-[64px] transition-colors",
-                isActive
-                  ? "text-orange-600"
-                  : "text-gray-700 hover:text-gray-900 active:text-gray-900"
+                "group relative flex flex-1 flex-col items-center justify-center gap-1 py-3 min-h-[68px] transition-colors",
+                isActive ? "text-coral-600" : "text-mocha-600 hover:text-mocha-900"
               )}
             >
-              <Icon size={28} weight={isActive ? "fill" : "regular"} aria-hidden="true" />
-              <span className="text-sm font-semibold leading-none">{item.label}</span>
+              {/* Active indicator pill behind icon */}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute top-2 h-9 w-12 rounded-full transition-all duration-200",
+                  isActive
+                    ? "bg-coral-100 scale-100 opacity-100"
+                    : "bg-transparent scale-75 opacity-0"
+                )}
+              />
+              <Icon
+                size={30}
+                weight={isActive ? "fill" : "regular"}
+                aria-hidden="true"
+                className="relative z-10"
+              />
+              <span
+                className={cn(
+                  "relative z-10 text-sm leading-none",
+                  isActive ? "font-extrabold" : "font-semibold"
+                )}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}

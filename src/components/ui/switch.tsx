@@ -10,7 +10,11 @@ const Switch = forwardRef<
 >(({ className, ...props }, ref) => (
   <SwitchPrimitive.Root
     className={cn(
-      "peer inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-orange-500 data-[state=unchecked]:bg-gray-200",
+      // 큰 터치 타겟 (시니어 친화): 32px 높이 → 손가락으로 쉽게 토글
+      "peer inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
+      "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-coral-200",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      "data-[state=checked]:bg-coral-500 data-[state=unchecked]:bg-mocha-200",
       className
     )}
     {...props}
@@ -18,7 +22,8 @@ const Switch = forwardRef<
   >
     <SwitchPrimitive.Thumb
       className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0.5"
+        "pointer-events-none block h-6 w-6 rounded-full bg-white shadow-soft transition-transform",
+        "data-[state=checked]:translate-x-6 data-[state=unchecked]:translate-x-0.5"
       )}
     />
   </SwitchPrimitive.Root>

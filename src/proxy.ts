@@ -1,7 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-const publicPaths = ["/login", "/register", "/onboarding", "/api/auth"];
+const publicPaths = [
+  "/login",
+  "/register",
+  "/onboarding",
+  "/api/auth",
+  // PWA + offline shell — must be reachable without a session
+  "/offline",
+  "/manifest.webmanifest",
+  "/sw.js",
+  "/icon",
+  "/apple-icon",
+  "/icon-maskable",
+];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
