@@ -1,4 +1,5 @@
 import { boolean, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const subscriptionTierEnum = pgEnum("h_subscription_tier", ["free", "premium"]);
 export const verificationTypeEnum = pgEnum("h_verification_type", [
@@ -48,4 +49,17 @@ export const verificationBadges = pgTable("h_verification_badges", {
   userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
   type: verificationTypeEnum("type").notNull(),
   verifiedAt: timestamp("verified_at").defaultNow(),
+});
+
+export const pushSubscriptions = pgTable("h_push_subscriptions", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()::text`),
+  userId: text("user_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
