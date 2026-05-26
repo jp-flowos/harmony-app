@@ -2,16 +2,32 @@ import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
-import { infoContents } from "@/db/schema";
-import { errorResponse as legacyErrorResponse, jsonResponse } from "@/lib/api-utils";
-import { serverError, successResponse, validationError } from "@/lib/api-response";
+import { infoContents, profiles } from "@/db/schema";
+import {
+  forbiddenError,
+  serverError,
+  successResponse,
+  unauthorizedError,
+  validationError,
+} from "@/lib/api-response";
+import { requireAdmin } from "@/lib/auth/is-admin";
 
 const CATEGORIES = ["health", "finance", "travel", "hobby", "gov"] as const;
+
 const QuerySchema = z.object({
   category: z.enum(CATEGORIES).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   q: z.string().trim().min(1).max(100).optional(),
+});
+
+const CreateSchema = z.object({
+  category: z.enum(CATEGORIES),
+  title: z.string().trim().min(1).max(200),
+  content: z.string().trim().min(1),
+  summaryBox: z.string().trim().max(500).optional(),
+  tags: z.array(z.string().trim().min(1).max(30)).max(10).optional(),
+  author: z.string().trim().min(1).max(40).optional(),
 });
 
 // GET /api/info - 정보 콘텐츠 목록 (페이지네이션·카테고리·검색)
@@ -57,34 +73,46 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/info - 콘텐츠 작성 (관리자)
-// Task 4에서 admin-only + DB INSERT로 교체 예정
+// POST /api/info - 콘텐츠 작성 (관리자 전용)
 export async function POST(request: NextRequest) {
+  const { isAdmin, userId } = await requireAdmin();
+  if (!userId) return unauthorizedError();
+  if (!isAdmin) return forbiddenError("관리자만 콘텐츠를 작성할 수 있습니다");
+
+  const parsed = CreateSchema.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return validationError(parsed.error.issues[0]?.message ?? "입력값이 올바르지 않습니다");
+  }
+
   try {
-    const body = await request.json();
-    const { category, title, content, tags, summaryBox } = body as {
-      category?: string;
-      title?: string;
-      content?: string;
-      tags?: string[];
-      summaryBox?: string;
-    };
-    if (!category || !title || !content) {
-      return legacyErrorResponse("필수 항목을 입력해주세요");
+    let resolvedAuthor = parsed.data.author;
+    if (!resolvedAuthor) {
+      const [adminProfile] = await db
+        .select({ nickname: profiles.nickname })
+        .from(profiles)
+        .where(eq(profiles.id, userId))
+        .limit(1);
+      resolvedAuthor = adminProfile?.nickname ?? "관리자";
     }
-    const article = {
-      id: crypto.randomUUID(),
-      category,
-      title,
-      content,
-      summaryBox: summaryBox ?? "",
-      tags: tags ?? [],
-      viewCount: 0,
-      likeCount: 0,
-      createdAt: new Date().toISOString(),
-    };
-    return jsonResponse(article, 201);
-  } catch {
-    return legacyErrorResponse("잘못된 요청입니다");
+
+    const [inserted] = await db
+      .insert(infoContents)
+      .values({
+        id: crypto.randomUUID(),
+        category: parsed.data.category,
+        title: parsed.data.title,
+        content: parsed.data.content,
+        summaryBox: parsed.data.summaryBox ?? null,
+        tags: parsed.data.tags ?? [],
+        author: resolvedAuthor,
+        viewCount: 0,
+        likeCount: 0,
+      })
+      .returning();
+
+    return successResponse(inserted, 201);
+  } catch (err) {
+    console.error("[info POST]", err);
+    return serverError();
   }
 }
