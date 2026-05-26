@@ -11,9 +11,6 @@ import {
   X,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PlanFeature {
@@ -44,23 +41,6 @@ const premiumBenefits = [
 ];
 
 export default function SubscribePage() {
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubscribe = async () => {
-    setLoading(true);
-    try {
-      // TODO: 토스페이먼츠 SDK 연동
-      // 1. POST /api/payments/ready → orderId, paymentKey
-      // 2. 토스페이먼츠 결제창 호출
-      // 3. 결제 성공 시 POST /api/payments/confirm
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setIsSubscribed(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6 p-4">
       <div className="flex items-center gap-3">
@@ -141,21 +121,14 @@ export default function SubscribePage() {
         </CardContent>
       </Card>
 
-      {/* CTA */}
-      <div className="sticky bottom-20 bg-white/90 backdrop-blur-sm p-4 -mx-4 border-t border-gray-100">
-        {isSubscribed ? (
-          <div className="text-center">
-            <Badge className="bg-orange-500 text-white text-base px-4 py-2">
-              <Crown size={18} weight="fill" className="mr-1" />
-              프리미엄 구독 중
-            </Badge>
-            <p className="mt-2 text-sm text-gray-500">다음 결제일: 2024-04-15</p>
-          </div>
-        ) : (
-          <Button className="w-full" size="lg" onClick={handleSubscribe} disabled={loading}>
-            {loading ? "처리 중..." : "월 39,000원으로 시작하기"}
-          </Button>
-        )}
+      {/* CTA — 결제 시스템 준비 전이므로 비활성 */}
+      <div className="sticky bottom-20 -mx-4 border-t border-mocha-100 bg-white/95 p-4 backdrop-blur-sm">
+        <div className="rounded-2xl border-2 border-coral-200 bg-coral-50 p-4 text-center">
+          <p className="text-lg font-bold text-coral-700">결제 시스템 준비 중이에요</p>
+          <p className="mt-1 text-base text-mocha-700">
+            곧 프리미엄 구독을 시작할 수 있도록 준비하고 있어요
+          </p>
+        </div>
       </div>
     </div>
   );
