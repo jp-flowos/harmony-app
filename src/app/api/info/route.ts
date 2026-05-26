@@ -1,23 +1,64 @@
+import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import type { NextRequest } from "next/server";
-import { errorResponse, jsonResponse } from "@/lib/api-utils";
+import { z } from "zod";
+import { db } from "@/db";
+import { infoContents } from "@/db/schema";
+import { errorResponse as legacyErrorResponse, jsonResponse } from "@/lib/api-utils";
+import { serverError, successResponse, validationError } from "@/lib/api-response";
 
-// GET /api/info - 정보 콘텐츠 목록
+const CATEGORIES = ["health", "finance", "travel", "hobby", "gov"] as const;
+const QuerySchema = z.object({
+  category: z.enum(CATEGORIES).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  q: z.string().trim().min(1).max(100).optional(),
+});
+
+// GET /api/info - 정보 콘텐츠 목록 (페이지네이션·카테고리·검색)
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
-  const category = searchParams.get("category");
-  const page = Number(searchParams.get("page") ?? "1");
-  const limit = Number(searchParams.get("limit") ?? "20");
-  const search = searchParams.get("q");
-
-  // TODO: DB query infoContents
-  return jsonResponse({
-    contents: [],
-    pagination: { page, limit, total: 0 },
-    filters: { category, search },
+  const sp = request.nextUrl.searchParams;
+  const parsed = QuerySchema.safeParse({
+    category: sp.get("category") ?? undefined,
+    page: sp.get("page") ?? undefined,
+    limit: sp.get("limit") ?? undefined,
+    q: sp.get("q") ?? undefined,
   });
+  if (!parsed.success) {
+    return validationError(parsed.error.issues[0]?.message ?? "잘못된 쿼리 파라미터입니다");
+  }
+  const { category, page, limit, q } = parsed.data;
+
+  const whereParts = [
+    category ? eq(infoContents.category, category) : undefined,
+    q ? or(ilike(infoContents.title, `%${q}%`), ilike(infoContents.content, `%${q}%`)) : undefined,
+  ].filter(Boolean);
+  const whereClause = whereParts.length ? and(...whereParts) : undefined;
+
+  try {
+    const [contents, totalRow] = await Promise.all([
+      db
+        .select()
+        .from(infoContents)
+        .where(whereClause)
+        .orderBy(desc(infoContents.createdAt))
+        .limit(limit)
+        .offset((page - 1) * limit),
+      db.select({ value: count() }).from(infoContents).where(whereClause),
+    ]);
+
+    return successResponse({
+      contents,
+      pagination: { page, limit, total: totalRow[0]?.value ?? 0 },
+      filters: { category: category ?? null, q: q ?? null },
+    });
+  } catch (err) {
+    console.error("[info GET]", err);
+    return serverError();
+  }
 }
 
 // POST /api/info - 콘텐츠 작성 (관리자)
+// Task 4에서 admin-only + DB INSERT로 교체 예정
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -28,11 +69,9 @@ export async function POST(request: NextRequest) {
       tags?: string[];
       summaryBox?: string;
     };
-
     if (!category || !title || !content) {
-      return errorResponse("필수 항목을 입력해주세요");
+      return legacyErrorResponse("필수 항목을 입력해주세요");
     }
-
     const article = {
       id: crypto.randomUUID(),
       category,
@@ -44,9 +83,8 @@ export async function POST(request: NextRequest) {
       likeCount: 0,
       createdAt: new Date().toISOString(),
     };
-
     return jsonResponse(article, 201);
   } catch {
-    return errorResponse("잘못된 요청입니다");
+    return legacyErrorResponse("잘못된 요청입니다");
   }
 }
