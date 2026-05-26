@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, CalendarDots, ChatCircle, ImageSquare, Users } from "@phosphor-icons/react";
+import { Bell, CalendarDots, ChatCircle, ImageSquare, MapPin, Users } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -90,6 +90,23 @@ export default function ClubDetailPage() {
         >
           {joined ? "가입됨 ✓" : "클럽 가입하기"}
         </Button>
+      </div>
+
+      {/* 지도에서 보기 — Phase 2 cross-link */}
+      <div className="px-4">
+        <Link href="/map" className="block">
+          <Card className="transition-all hover:border-sage-200 hover:shadow-soft">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sage-50">
+                <MapPin size={24} weight="duotone" className="text-sage-700" />
+              </div>
+              <div className="flex-1">
+                <p className="text-lg font-bold text-mocha-900">지도에서 보기</p>
+                <p className="text-base text-mocha-700">모임 장소와 주변 정보를 확인해보세요</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Tabs */}
