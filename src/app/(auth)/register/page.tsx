@@ -54,15 +54,6 @@ export default function RegisterPage() {
         return;
       }
 
-      if (data.user) {
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: data.user.id, nickname }),
-        });
-        if (!res.ok) console.error("Profile creation error:", await res.text());
-      }
-
       setStep("complete");
     } finally {
       setLoading(false);
