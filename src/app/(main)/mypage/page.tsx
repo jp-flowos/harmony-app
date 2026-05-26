@@ -34,12 +34,36 @@ const myClubs = [
   { id: "3", name: "독서 클럽", emoji: "📚", members: 28 },
 ];
 const myMeetings = [
-  { id: "m1", title: "3월 정기 산행", clubName: "서울 등산 모임", date: "2026-06-15", status: "upcoming" as const },
-  { id: "m2", title: "2월 독서 모임", clubName: "독서 클럽", date: "2026-04-20", status: "completed" as const },
+  {
+    id: "m1",
+    title: "3월 정기 산행",
+    clubName: "서울 등산 모임",
+    date: "2026-06-15",
+    status: "upcoming" as const,
+  },
+  {
+    id: "m2",
+    title: "2월 독서 모임",
+    clubName: "독서 클럽",
+    date: "2026-04-20",
+    status: "completed" as const,
+  },
 ];
 const myReviews = [
-  { id: "r1", meetingTitle: "2월 산행", rating: 5, content: "최고의 산행이었습니다!", date: "2026-04-18" },
-  { id: "r2", meetingTitle: "1월 독서 모임", rating: 4, content: "유익한 시간이었어요", date: "2026-03-20" },
+  {
+    id: "r1",
+    meetingTitle: "2월 산행",
+    rating: 5,
+    content: "최고의 산행이었습니다!",
+    date: "2026-04-18",
+  },
+  {
+    id: "r2",
+    meetingTitle: "1월 독서 모임",
+    rating: 4,
+    content: "유익한 시간이었어요",
+    date: "2026-03-20",
+  },
 ];
 const myFavorites = [
   { id: "f1", name: "북한산 둘레길", type: "장소" },
@@ -172,7 +196,9 @@ export default async function MyPage() {
               {myClubs.map((club) => (
                 <Link key={club.id} href={`/club/${club.id}`} className="block">
                   <div className="flex items-center gap-3 rounded-2xl p-3 transition-colors hover:bg-cream-100 active:bg-cream-200">
-                    <span aria-hidden="true" className="text-3xl">{club.emoji}</span>
+                    <span aria-hidden="true" className="text-3xl">
+                      {club.emoji}
+                    </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-lg font-bold text-mocha-900 truncate">{club.name}</p>
                       <p className="text-base text-mocha-700">멤버 {club.members}명</p>
@@ -194,7 +220,9 @@ export default async function MyPage() {
                     <CalendarDots
                       size={26}
                       weight="duotone"
-                      className={meeting.status === "upcoming" ? "text-coral-600" : "text-mocha-500"}
+                      className={
+                        meeting.status === "upcoming" ? "text-coral-600" : "text-mocha-500"
+                      }
                     />
                   </div>
                   <div className="flex-1 min-w-0">

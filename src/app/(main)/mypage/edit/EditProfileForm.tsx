@@ -12,8 +12,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 const hobbyOptions = [
-  "등산", "골프", "독서", "여행", "요리", "사진", "낚시",
-  "바둑", "테니스", "수영", "서예", "가드닝", "댄스", "요가", "그림",
+  "등산",
+  "골프",
+  "독서",
+  "여행",
+  "요리",
+  "사진",
+  "낚시",
+  "바둑",
+  "테니스",
+  "수영",
+  "서예",
+  "가드닝",
+  "댄스",
+  "요가",
+  "그림",
 ];
 
 interface Props {
@@ -145,12 +158,9 @@ export function EditProfileForm({ userId, initial }: Props) {
         </div>
       )}
       {savedAt && !error && (
-        <div
-          role="status"
-          className="rounded-2xl border-2 border-sage-200 bg-sage-50 p-4 text-base font-medium text-sage-800"
-        >
+        <output className="block rounded-2xl border-2 border-sage-200 bg-sage-50 p-4 text-base font-medium text-sage-800">
           저장되었어요
-        </div>
+        </output>
       )}
 
       <Button
