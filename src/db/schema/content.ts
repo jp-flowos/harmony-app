@@ -1,4 +1,4 @@
-import { integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 import { profiles } from "./users";
 
 export const infoCategoryEnum = pgEnum("h_info_category", [
@@ -75,11 +75,19 @@ export const communityPosts = pgTable("h_community_posts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const communityLikes = pgTable("h_community_likes", {
-  postId: text("post_id").references(() => communityPosts.id, { onDelete: "cascade" }),
-  userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const communityLikes = pgTable(
+  "h_community_likes",
+  {
+    postId: text("post_id")
+      .notNull()
+      .references(() => communityPosts.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.postId, t.userId] })]
+);
 
 export const communityComments = pgTable("h_community_comments", {
   id: text("id").primaryKey(),
