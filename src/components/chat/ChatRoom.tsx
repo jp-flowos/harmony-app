@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { type ChatMessage, sendMessage, subscribeToMessages } from "@/lib/firebase/chat";
+import { type ChatMessage, sendMessage, subscribeToMessages } from "@/lib/chat/realtime";
 
 interface ChatRoomProps {
   roomId: string;

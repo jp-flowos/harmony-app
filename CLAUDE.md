@@ -30,7 +30,7 @@ bun run deploy:preview   # Deploy to Vercel (preview)
 - **Icons**: Phosphor Icons (`@phosphor-icons/react`)
 - **Auth**: Supabase Auth with SSR (`@supabase/ssr`)
 - **Database**: PostgreSQL (Supabase) via Drizzle ORM
-- **Chat**: Firebase Realtime Database (client-side only)
+- **Chat**: Supabase Realtime (`postgres_changes` on `h_chat_messages`)
 - **Validation**: Zod (with `drizzle-zod` for schema integration)
 - **Data Fetching**: TanStack React Query
 - **Linting/Formatting**: Biome (2-space indent, double quotes, trailing commas ES5, 100 char line width)
@@ -68,7 +68,7 @@ Components in `src/components/ui/` follow a consistent pattern:
 
 ### External Services
 
-- **Firebase chat** (`@/lib/firebase/client.ts`): Lazy-initialized singleton with proxy pattern. Client-side only.
+- **Realtime chat** (`@/lib/chat/realtime.ts`): Browser Supabase client (schema `si_mvp`) that wraps `h_chat_messages` INSERT + `postgres_changes` subscription. Same `ChatMessage`/`sendMessage`/`subscribeToMessages` interface a Firebase implementation used to expose.
 - **KakaoMap** (`@/lib/kakao/`): Map integration for meeting locations.
 - **Toss Payments** (`@/lib/toss/`): Subscription payments.
 - **Gemini AI** (`@/lib/gemini.ts`): Content generation for fortune/info articles (admin-triggered).
@@ -81,7 +81,7 @@ Components in `src/components/ui/` follow a consistent pattern:
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local`. Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`. All others are optional for specific features (Firebase, KakaoMap, Toss, VAPID, Gemini).
+Copy `.env.example` to `.env.local`. Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`. All others are optional for specific features (KakaoMap, Toss, VAPID, Gemini).
 
 ## Conventions
 

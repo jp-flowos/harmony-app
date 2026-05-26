@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { clubs } from "./clubs";
 import { profiles } from "./users";
 
@@ -10,7 +10,6 @@ export const chatRequestStatusEnum = pgEnum("h_chat_request_status", [
   "expired",
 ]);
 
-// Supabase: 메타데이터만 저장 (실제 메시지는 Firebase)
 export const chatRooms = pgTable("h_chat_rooms", {
   id: text("id").primaryKey(),
   type: chatRoomTypeEnum("type").notNull(),
@@ -18,7 +17,6 @@ export const chatRooms = pgTable("h_chat_rooms", {
   clubId: text("club_id").references(() => clubs.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
   lastMessageAt: timestamp("last_message_at"),
-  firebaseRoomId: text("firebase_room_id"), // Firebase 채팅방 ID 연결
 });
 
 export const chatRoomMembers = pgTable("h_chat_room_members", {
@@ -28,12 +26,29 @@ export const chatRoomMembers = pgTable("h_chat_room_members", {
   lastReadAt: timestamp("last_read_at"),
 });
 
-// 1:1 채팅 요청
+export const chatMessages = pgTable(
+  "h_chat_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    roomId: text("room_id")
+      .notNull()
+      .references(() => chatRooms.id, { onDelete: "cascade" }),
+    senderId: text("sender_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    senderNickname: text("sender_nickname").notNull(),
+    content: text("content").notNull(),
+    isDeleted: boolean("is_deleted").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("h_idx_chat_messages_room_created").on(t.roomId, t.createdAt)]
+);
+
 export const chatRequests = pgTable("h_chat_requests", {
   id: text("id").primaryKey(),
   fromUser: text("from_user").references(() => profiles.id),
   toUser: text("to_user").references(() => profiles.id),
   status: chatRequestStatusEnum("status").default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
-  expiresAt: timestamp("expires_at"), // 24시간 미응답 시 만료
+  expiresAt: timestamp("expires_at"),
 });

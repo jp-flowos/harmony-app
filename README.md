@@ -8,7 +8,7 @@
 - ✅ UI 컴포넌트 시스템 (Button, Card, Badge, Dialog, Tabs, Avatar 등)
 - ✅ 인증 (로그인/회원가입/온보딩) — Supabase Auth
 - ✅ 클럽 관리 (생성/가입/탈퇴/게시판)
-- ✅ 채팅 (클럽 채팅, 1:1 채팅 요청) — Firebase Realtime
+- ✅ 채팅 (클럽 채팅, 1:1 채팅 요청) — Supabase Realtime
 - ✅ 지도 (주변 시니어 친화 장소)
 - ✅ 마이페이지 (프로필 편집, 설정)
 - ✅ API Routes (RESTful)
@@ -47,7 +47,7 @@
 | 아이콘 | Phosphor Icons |
 | 인증 | Supabase Auth + SSR |
 | DB | PostgreSQL (Supabase) + Drizzle ORM |
-| 채팅 | Firebase Realtime Database |
+| 채팅 | Supabase Realtime (`postgres_changes`) |
 | 결제 | 토스페이먼츠 |
 | 지도 | 카카오맵 |
 | AI | Google Gemini API |
@@ -148,7 +148,7 @@ src/
 │   ├── premium.ts       # 프리미엄 기능
 │   ├── recommendation.ts# 추천 알고리즘
 │   ├── utils.ts         # 공통 유틸
-│   ├── firebase/        # Firebase 클라이언트
+│   ├── chat/            # Supabase Realtime 채팅 클라이언트
 │   └── supabase/        # Supabase 클라이언트
 └── scripts/
     └── migrate-phase4.sql

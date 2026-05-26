@@ -22,32 +22,13 @@ Harmony 앱 배포를 위한 단계별 가이드입니다.
 4. **Settings → Database**에서 복사:
    - Connection string → `DATABASE_URL`
 
-## 2. Firebase 셋업 (5분)
+## 2. 채팅 (Supabase Realtime)
 
-1. [console.firebase.google.com](https://console.firebase.google.com) → 새 프로젝트
-2. **Realtime Database** 활성화
-   - 리전: `asia-southeast1` (싱가포르) 또는 가까운 리전
-3. 규칙 설정:
-   ```json
-   {
-     "rules": {
-       "chatRooms": {
-         "$roomId": {
-           ".read": "auth != null",
-           ".write": "auth != null"
-         }
-       }
-     }
-   }
-   ```
-4. **웹 앱 추가** → 설정값 복사:
-   - `NEXT_PUBLIC_FIREBASE_API_KEY`
-   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-   - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-   - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-   - `NEXT_PUBLIC_FIREBASE_APP_ID`
-   - `NEXT_PUBLIC_FIREBASE_DATABASE_URL`
+별도 셋업 불필요 — Supabase 프로젝트의 Realtime 기능을 사용합니다.
+마이그레이션(`supabase/migrations/20260524000000_chat_messages_realtime.sql`)이
+`h_chat_messages` 테이블을 `supabase_realtime` publication에 자동 등록합니다.
+
+`bunx supabase db push` 또는 Supabase Dashboard → SQL Editor에서 실행하세요.
 
 ## 3. 카카오맵 API (3분)
 
@@ -111,7 +92,6 @@ npm run deploy
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase service role 키 |
 | `DATABASE_URL` | ✅ | PostgreSQL 연결 문자열 |
 | `NEXT_PUBLIC_SITE_URL` | ⬜ | 사이트 URL (SEO/OG) |
-| `NEXT_PUBLIC_FIREBASE_*` | ⬜ | Firebase 채팅 설정 |
 | `NEXT_PUBLIC_KAKAO_MAP_KEY` | ⬜ | 카카오맵 JavaScript 키 |
 | `TOSS_PAYMENTS_SECRET_KEY` | ⬜ | 토스페이먼츠 시크릿 키 |
 | `NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY` | ⬜ | 토스페이먼츠 클라이언트 키 |
