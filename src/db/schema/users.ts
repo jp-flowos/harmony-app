@@ -1,5 +1,14 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 export const subscriptionTierEnum = pgEnum("h_subscription_tier", ["free", "premium"]);
 export const verificationTypeEnum = pgEnum("h_verification_type", [
@@ -52,9 +61,7 @@ export const verificationBadges = pgTable("h_verification_badges", {
 });
 
 export const pushSubscriptions = pgTable("h_push_subscriptions", {
-  id: text("id")
-    .primaryKey()
-    .default(sql`gen_random_uuid()::text`),
+  id: text("id").primaryKey().default(sql`gen_random_uuid()::text`),
   userId: text("user_id")
     .notNull()
     .references(() => profiles.id, { onDelete: "cascade" }),

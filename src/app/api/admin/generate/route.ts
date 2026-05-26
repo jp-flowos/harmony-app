@@ -1,5 +1,4 @@
 import type { NextRequest } from "next/server";
-import { requireAdmin } from "@/lib/auth/is-admin";
 import {
   errorResponse,
   forbiddenError,
@@ -8,6 +7,7 @@ import {
   unauthorizedError,
   validationError,
 } from "@/lib/api-response";
+import { requireAdmin } from "@/lib/auth/is-admin";
 import { generateFortuneContent, generateInfoDraft, isGeminiAvailable } from "@/lib/gemini";
 
 export async function POST(request: NextRequest) {

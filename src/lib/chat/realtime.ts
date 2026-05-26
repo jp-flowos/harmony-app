@@ -3,10 +3,7 @@
  * h_chat_messages 테이블 INSERT + postgres_changes 구독
  */
 import { createBrowserClient } from "@supabase/ssr";
-import type {
-  PostgrestSingleResponse,
-  RealtimePostgresInsertPayload,
-} from "@supabase/supabase-js";
+import type { PostgrestSingleResponse, RealtimePostgresInsertPayload } from "@supabase/supabase-js";
 
 const SCHEMA = "si_mvp";
 
