@@ -119,7 +119,7 @@ export function KakaoMap({ places = [], onPlaceClick, center, className }: Kakao
 
   // Load SDK
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
     if (!apiKey) {
       setError("카카오맵 API 키가 설정되지 않았습니다");
       return;
