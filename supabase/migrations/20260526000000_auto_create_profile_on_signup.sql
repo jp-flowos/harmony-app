@@ -11,7 +11,7 @@ as $$
 begin
   insert into si_mvp.h_profiles (id, nickname, region)
   values (
-    new.id,
+    new.id::text,
     coalesce(new.raw_user_meta_data->>'nickname', '회원'),
     coalesce(new.raw_user_meta_data->>'region', '서울')
   )
@@ -27,11 +27,12 @@ create trigger on_auth_user_created
   for each row execute function si_mvp.handle_new_user();
 
 -- Backfill: create profiles for any existing auth users that don't have one.
+-- Note: auth.users.id is uuid while h_profiles.id is text, so we cast.
 insert into si_mvp.h_profiles (id, nickname, region)
 select
-  u.id,
+  u.id::text,
   coalesce(u.raw_user_meta_data->>'nickname', '회원'),
   '서울'
 from auth.users u
-left join si_mvp.h_profiles p on p.id = u.id
+left join si_mvp.h_profiles p on p.id = u.id::text
 where p.id is null;
