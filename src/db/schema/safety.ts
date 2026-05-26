@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 import { profiles } from "./users";
 
 export const reportTargetTypeEnum = pgEnum("h_report_target_type", [
@@ -20,11 +20,19 @@ export const reports = pgTable("h_reports", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const blocks = pgTable("h_blocks", {
-  blockerId: text("blocker_id").references(() => profiles.id, { onDelete: "cascade" }),
-  blockedId: text("blocked_id").references(() => profiles.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const blocks = pgTable(
+  "h_blocks",
+  {
+    blockerId: text("blocker_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    blockedId: text("blocked_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.blockerId, t.blockedId] })]
+);
 
 export const subscriptions = pgTable("h_subscriptions", {
   id: text("id").primaryKey(),

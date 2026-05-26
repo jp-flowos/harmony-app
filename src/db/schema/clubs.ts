@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 import { places } from "./places";
 import { profiles } from "./users";
 
@@ -25,13 +25,21 @@ export const clubs = pgTable("h_clubs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const clubMembers = pgTable("h_club_members", {
-  clubId: text("club_id").references(() => clubs.id, { onDelete: "cascade" }),
-  userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
-  role: memberRoleEnum("role").default("member"),
-  joinedAt: timestamp("joined_at").defaultNow(),
-  status: memberStatusEnum("status").default("active"),
-});
+export const clubMembers = pgTable(
+  "h_club_members",
+  {
+    clubId: text("club_id")
+      .notNull()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    role: memberRoleEnum("role").default("member"),
+    joinedAt: timestamp("joined_at").defaultNow(),
+    status: memberStatusEnum("status").default("active"),
+  },
+  (t) => [primaryKey({ columns: [t.clubId, t.userId] })]
+);
 
 export const clubPosts = pgTable("h_club_posts", {
   id: text("id").primaryKey(),
@@ -47,11 +55,19 @@ export const clubPosts = pgTable("h_club_posts", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const clubPostLikes = pgTable("h_club_post_likes", {
-  postId: text("post_id").references(() => clubPosts.id, { onDelete: "cascade" }),
-  userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const clubPostLikes = pgTable(
+  "h_club_post_likes",
+  {
+    postId: text("post_id")
+      .notNull()
+      .references(() => clubPosts.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.postId, t.userId] })]
+);
 
 export const clubComments = pgTable("h_club_comments", {
   id: text("id").primaryKey(),
@@ -76,9 +92,17 @@ export const clubMeetings = pgTable("h_club_meetings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const meetingParticipants = pgTable("h_meeting_participants", {
-  meetingId: text("meeting_id").references(() => clubMeetings.id, { onDelete: "cascade" }),
-  userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
-  status: meetingParticipantStatusEnum("status").default("joined"),
-  joinedAt: timestamp("joined_at").defaultNow(),
-});
+export const meetingParticipants = pgTable(
+  "h_meeting_participants",
+  {
+    meetingId: text("meeting_id")
+      .notNull()
+      .references(() => clubMeetings.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    status: meetingParticipantStatusEnum("status").default("joined"),
+    joinedAt: timestamp("joined_at").defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.meetingId, t.userId] })]
+);

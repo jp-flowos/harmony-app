@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 
 export const subscriptionTierEnum = pgEnum("h_subscription_tier", ["free", "premium"]);
 export const verificationTypeEnum = pgEnum("h_verification_type", [
@@ -30,10 +30,18 @@ export const hobbies = pgTable("h_hobbies", {
   icon: text("icon"),
 });
 
-export const userHobbies = pgTable("h_user_hobbies", {
-  userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
-  hobbyId: text("hobby_id").references(() => hobbies.id, { onDelete: "cascade" }),
-});
+export const userHobbies = pgTable(
+  "h_user_hobbies",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    hobbyId: text("hobby_id")
+      .notNull()
+      .references(() => hobbies.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.hobbyId] })]
+);
 
 export const verificationBadges = pgTable("h_verification_badges", {
   id: text("id").primaryKey(),

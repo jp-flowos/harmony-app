@@ -1,4 +1,4 @@
-import { boolean, index, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { clubs } from "./clubs";
 import { profiles } from "./users";
 
@@ -19,12 +19,20 @@ export const chatRooms = pgTable("h_chat_rooms", {
   lastMessageAt: timestamp("last_message_at"),
 });
 
-export const chatRoomMembers = pgTable("h_chat_room_members", {
-  roomId: text("room_id").references(() => chatRooms.id, { onDelete: "cascade" }),
-  userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
-  joinedAt: timestamp("joined_at").defaultNow(),
-  lastReadAt: timestamp("last_read_at"),
-});
+export const chatRoomMembers = pgTable(
+  "h_chat_room_members",
+  {
+    roomId: text("room_id")
+      .notNull()
+      .references(() => chatRooms.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at").defaultNow(),
+    lastReadAt: timestamp("last_read_at"),
+  },
+  (t) => [primaryKey({ columns: [t.roomId, t.userId] })]
+);
 
 export const chatMessages = pgTable(
   "h_chat_messages",
