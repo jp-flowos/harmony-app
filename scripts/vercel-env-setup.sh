@@ -37,6 +37,7 @@ declare -A ENV_VARS=(
   ["VAPID_EMAIL"]="${VAPID_EMAIL:-}"
   ["GEMINI_API_KEY"]="${GEMINI_API_KEY:-}"
   ["GEMINI_MODEL"]="${GEMINI_MODEL:-gemini-2.0-flash}"
+  ["ADMIN_EMAILS"]="${ADMIN_EMAILS:-}"
 )
 
 SUCCESS=0

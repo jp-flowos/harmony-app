@@ -96,6 +96,7 @@ npm run deploy
 | `TOSS_PAYMENTS_SECRET_KEY` | ⬜ | 토스페이먼츠 시크릿 키 |
 | `NEXT_PUBLIC_TOSS_PAYMENTS_CLIENT_KEY` | ⬜ | 토스페이먼츠 클라이언트 키 |
 | `GEMINI_API_KEY` | ⬜ | Gemini AI API 키 |
+| `ADMIN_EMAILS` | ⬜ | 관리자 이메일 (콤마 구분) |
 
 > 💡 선택 항목이 없어도 빌드/배포는 정상 동작합니다 (lazy init 적용됨).
 
