@@ -4,11 +4,12 @@ export type CardId = "operator" | "cohort" | "first-club" | "kakao-share" | "not
 
 export function isDismissed(id: CardId): boolean {
   if (typeof window === "undefined") return false;
-  const raw = localStorage.getItem(KEY);
-  if (!raw) return false;
+
   try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return false;
     const arr = JSON.parse(raw) as CardId[];
-    return arr.includes(id);
+    return Array.isArray(arr) && arr.includes(id);
   } catch {
     return false;
   }
@@ -16,11 +17,13 @@ export function isDismissed(id: CardId): boolean {
 
 export function dismiss(id: CardId) {
   if (typeof window === "undefined") return;
-  const raw = localStorage.getItem(KEY);
-  let arr: CardId[] = [];
+
   try {
-    arr = raw ? (JSON.parse(raw) as CardId[]) : [];
+    const raw = localStorage.getItem(KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    const arr = Array.isArray(parsed) ? (parsed as CardId[]) : [];
+
+    if (!arr.includes(id)) arr.push(id);
+    localStorage.setItem(KEY, JSON.stringify(arr));
   } catch {}
-  if (!arr.includes(id)) arr.push(id);
-  localStorage.setItem(KEY, JSON.stringify(arr));
 }

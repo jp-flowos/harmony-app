@@ -37,9 +37,11 @@ const CARDS: CardConfig[] = [
 export function OnboardingCarousel() {
   const [hiddenIds, setHiddenIds] = useState<CarouselCardId[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setHiddenIds(CARDS.filter((card) => isDismissed(card.id)).map((card) => card.id));
+    setReady(true);
   }, []);
 
   const visibleCards = useMemo(
@@ -64,6 +66,7 @@ export function OnboardingCarousel() {
     hideCard(activeCard.id, false);
   }, [activeCard, hideCard]);
 
+  if (!ready) return null;
   if (!activeCard) return null;
 
   return (
@@ -91,8 +94,11 @@ export function OnboardingCarousel() {
                 type="button"
                 onClick={() => setActiveIndex(index)}
                 className={cn(
-                  "h-4 rounded-full transition-all focus:outline-none focus:ring-4 focus:ring-coral-200",
-                  isActive ? "w-8 bg-coral-500" : "w-4 bg-mocha-200 hover:bg-mocha-300"
+                  "flex h-12 w-12 items-center justify-center rounded-full transition-all focus:outline-none focus:ring-4 focus:ring-coral-200",
+                  "after:block after:h-4 after:rounded-full after:content-['']",
+                  isActive
+                    ? "after:w-8 after:bg-coral-500"
+                    : "after:w-4 after:bg-mocha-200 hover:after:bg-mocha-300"
                 )}
                 aria-label={`${card.label} 카드 보기`}
                 aria-current={isActive ? "true" : undefined}

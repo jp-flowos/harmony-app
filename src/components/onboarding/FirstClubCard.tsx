@@ -19,6 +19,21 @@ interface FirstClubCardProps {
   onEmpty?: () => void;
 }
 
+function isClub(value: unknown): value is Club {
+  if (!value || typeof value !== "object") return false;
+
+  const club = value as Partial<Club>;
+  const hasValidDescription = typeof club.description === "string" || club.description === null;
+
+  return (
+    typeof club.id === "string" &&
+    typeof club.name === "string" &&
+    typeof club.category === "string" &&
+    hasValidDescription &&
+    typeof club.memberCount === "number"
+  );
+}
+
 export function FirstClubCard({ onEmpty }: FirstClubCardProps) {
   const [club, setClub] = useState<Club | null | undefined>(undefined);
 
@@ -29,7 +44,7 @@ export function FirstClubCard({ onEmpty }: FirstClubCardProps) {
       try {
         const res = await fetch("/api/onboarding/first-club");
         const j = await res.json();
-        const nextClub = j.success ? (j.data.club as Club | null) : null;
+        const nextClub = j.success && isClub(j.data?.club) ? j.data.club : null;
 
         if (!alive) return;
         if (!nextClub) {

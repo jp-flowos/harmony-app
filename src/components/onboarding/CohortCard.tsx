@@ -14,6 +14,14 @@ interface CohortCardProps {
   onEmpty?: () => void;
 }
 
+function isPeer(value: unknown): value is Peer {
+  if (!value || typeof value !== "object") return false;
+
+  const peer = value as Partial<Peer>;
+  const hasValidNickname = typeof peer.nickname === "string" || peer.nickname === null;
+  return hasValidNickname && typeof peer.joinedAgo === "string";
+}
+
 export function CohortCard({ onEmpty }: CohortCardProps) {
   const [peers, setPeers] = useState<Peer[] | null | undefined>(undefined);
 
@@ -24,7 +32,8 @@ export function CohortCard({ onEmpty }: CohortCardProps) {
       try {
         const res = await fetch("/api/onboarding/cohort");
         const j = await res.json();
-        const nextPeers = j.success ? (j.data.peers as Peer[]) : [];
+        const nextPeers =
+          j.success && Array.isArray(j.data?.peers) ? j.data.peers.filter(isPeer) : [];
 
         if (!alive) return;
         if (nextPeers.length === 0) {
