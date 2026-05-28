@@ -1,7 +1,7 @@
 "use client";
 
 import { PencilSimple, UserCircle } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Greeting } from "@/components/ui/greeting";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,12 @@ export function StepNickname({ value, onChange, onNext }: StepNicknameProps) {
   const candidates = useMemo(() => pickNicknameCandidates(6), []);
   const [useDirectInput, setUseDirectInput] = useState(false);
   const hasNickname = value.trim().length > 0;
+
+  useEffect(() => {
+    if (hasNickname && !candidates.includes(value)) {
+      setUseDirectInput(true);
+    }
+  }, [candidates, hasNickname, value]);
 
   return (
     <div className="space-y-6">

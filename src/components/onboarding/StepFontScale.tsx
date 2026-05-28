@@ -1,7 +1,7 @@
 "use client";
 
 import { SpeakerHigh, SpeakerSlash } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type FontScale, useFontScale } from "@/components/providers/FontScaleProvider";
 import { Button } from "@/components/ui/button";
 import { Greeting } from "@/components/ui/greeting";
@@ -16,7 +16,11 @@ const OPTIONS: { value: FontScale; label: string; sampleClass: string }[] = [
 
 export function StepFontScale({ onNext }: { onNext: () => void }) {
   const { scale, setScale } = useFontScale();
-  const [voiceOn, setVoiceOn] = useState(() => isVoiceGuideEnabled());
+  const [voiceOn, setVoiceOn] = useState(false);
+
+  useEffect(() => {
+    setVoiceOn(isVoiceGuideEnabled());
+  }, []);
 
   function handleVoiceChange(enabled: boolean) {
     setVoiceOn(enabled);
