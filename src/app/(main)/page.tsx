@@ -15,11 +15,16 @@ import {
   UserCirclePlus,
   UsersThree,
 } from "@phosphor-icons/react/dist/ssr";
+import { eq } from "drizzle-orm";
 import Link from "next/link";
+import { OnboardingCarousel } from "@/components/onboarding/OnboardingCarousel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { db } from "@/db";
+import { profiles } from "@/db/schema";
 import { generateFortune, getZodiacEmoji, ZODIAC_ANIMALS } from "@/lib/fortune";
+import { createClient } from "@/lib/supabase/server";
 
 function getToday(): string {
   return new Date().toISOString().slice(0, 10);
@@ -44,6 +49,8 @@ const popularPosts = [
 ];
 
 const fortuneScoreStars = [1, 2, 3, 4, 5] as const;
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 const personalRecommendations = [
   {
@@ -72,13 +79,33 @@ const personalRecommendations = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let showCarousel = false;
+  if (user) {
+    const [me] = await db
+      .select({ createdAt: profiles.createdAt })
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1);
+
+    if (me?.createdAt && Date.now() - me.createdAt.getTime() < SEVEN_DAYS_MS) {
+      showCarousel = true;
+    }
+  }
+
   const today = getToday();
   const previewZodiac = ZODIAC_ANIMALS[new Date().getDay() % ZODIAC_ANIMALS.length];
   const fortune = generateFortune(today, previewZodiac);
 
   return (
     <div className="space-y-7 p-5 pb-6">
+      {showCarousel && <OnboardingCarousel />}
+
       {/* Welcome header */}
       <header className="flex items-start justify-between pt-3">
         <div className="flex items-start gap-3">
