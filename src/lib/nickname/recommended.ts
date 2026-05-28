@@ -32,6 +32,13 @@ const POOL = [
 ] as const;
 
 export function pickNicknameCandidates(count = 6): string[] {
-  const shuffled = [...POOL].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+  const limit = Math.max(0, Math.min(count, POOL.length));
+  const shuffled = [...POOL];
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled.slice(0, limit);
 }
