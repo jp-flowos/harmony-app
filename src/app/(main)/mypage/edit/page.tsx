@@ -34,7 +34,7 @@ export default async function ProfileEditPage() {
         userId={user.id}
         initial={{
           nickname: profile.nickname,
-          region: profile.region,
+          region: profile.region ?? "",
           bio: profile.bio ?? "",
         }}
       />
