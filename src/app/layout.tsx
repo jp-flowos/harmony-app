@@ -4,6 +4,14 @@ import { FontScaleProvider } from "@/components/providers/FontScaleProvider";
 import { ServiceWorkerRegistrar } from "@/components/system/ServiceWorkerRegistrar";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://harmony-app.kr";
+const FONT_SCALE_SCRIPT = `
+try {
+  var scale = localStorage.getItem("harmony.fontScale");
+  if (scale === "sm" || scale === "md" || scale === "lg" || scale === "xl") {
+    document.documentElement.dataset.fontScale = scale;
+  }
+} catch {}
+`;
 
 export const metadata: Metadata = {
   title: {
@@ -74,6 +82,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="하모니" />
+        <script>{FONT_SCALE_SCRIPT}</script>
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <FontScaleProvider>{children}</FontScaleProvider>

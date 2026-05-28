@@ -31,9 +31,13 @@ export function FontScaleProvider({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (isFontScale(saved)) {
-      setScaleState(saved);
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (isFontScale(saved)) {
+        setScaleState(saved);
+      }
+    } catch {
+      // Restricted storage contexts should not break global rendering.
     }
   }, []);
 
@@ -47,7 +51,11 @@ export function FontScaleProvider({
     setScaleState(nextScale);
 
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, nextScale);
+      try {
+        window.localStorage.setItem(STORAGE_KEY, nextScale);
+      } catch {
+        // Keep the in-memory scale even if persistence is unavailable.
+      }
     }
   }, []);
 
