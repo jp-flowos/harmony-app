@@ -60,7 +60,7 @@ export default function LoginPage() {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: "kakao",
-      options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding` },
     });
   };
 
@@ -90,21 +90,19 @@ export default function LoginPage() {
           <div className="stagger-children space-y-3">
             <Button
               variant="kakao"
-              className="w-full animate-fade-up"
+              className="mb-6 w-full animate-fade-up text-lg font-extrabold"
               size="lg"
+              type="button"
               onClick={handleKakaoLogin}
             >
               <ChatCircle size={28} weight="fill" />
-              카카오로 시작하기
+              카카오로 로그인하기
             </Button>
 
-            <div className="relative my-3 animate-fade-up" aria-hidden="true">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t-2 border-mocha-100" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white px-4 text-base font-bold text-mocha-500">또는</span>
-              </div>
+            <div className="mb-6 flex items-center gap-3 text-mocha-500" aria-hidden="true">
+              <hr className="flex-1 border-mocha-200" />
+              <span className="text-sm">또는 이메일로</span>
+              <hr className="flex-1 border-mocha-200" />
             </div>
 
             <Button

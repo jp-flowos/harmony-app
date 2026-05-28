@@ -60,6 +60,14 @@ export default function RegisterPage() {
     }
   };
 
+  const handleKakaoLogin = async () => {
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "kakao",
+      options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding` },
+    });
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-7 sm:p-8">
@@ -81,6 +89,19 @@ export default function RegisterPage() {
               subtitle="간단한 정보로 시작할 수 있어요"
               className="mb-7"
             />
+
+            <button
+              type="button"
+              onClick={handleKakaoLogin}
+              className="mb-6 flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] text-lg font-extrabold text-[#191919] transition-all duration-150 hover:bg-[#FDD835] active:scale-[0.98] active:bg-[#FBC02D] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-coral-200"
+            >
+              💬 카카오로 시작하기
+            </button>
+            <div className="mb-6 flex items-center gap-3 text-mocha-500" aria-hidden="true">
+              <hr className="flex-1 border-mocha-200" />
+              <span className="text-sm">또는 이메일로</span>
+              <hr className="flex-1 border-mocha-200" />
+            </div>
 
             <form className="stagger-children space-y-6" onSubmit={handleRegister} noValidate>
               <div className="space-y-2 animate-fade-up">
