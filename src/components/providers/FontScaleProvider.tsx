@@ -19,6 +19,13 @@ function isFontScale(value: string | null): value is FontScale {
   return FONT_SCALES.includes(value as FontScale);
 }
 
+function getPreloadedFontScale(initial: FontScale): FontScale {
+  if (typeof document === "undefined") return initial;
+
+  const preloaded = document.documentElement.dataset.fontScale ?? null;
+  return isFontScale(preloaded) ? preloaded : initial;
+}
+
 export function FontScaleProvider({
   children,
   initial = "lg",
@@ -26,7 +33,7 @@ export function FontScaleProvider({
   children: ReactNode;
   initial?: FontScale;
 }) {
-  const [scale, setScaleState] = useState<FontScale>(initial);
+  const [scale, setScaleState] = useState<FontScale>(() => getPreloadedFontScale(initial));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
