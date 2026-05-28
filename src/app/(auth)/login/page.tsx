@@ -27,6 +27,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [kakaoLoading, setKakaoLoading] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +58,27 @@ export default function LoginPage() {
   };
 
   const handleKakaoLogin = async () => {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "kakao",
-      options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding` },
-    });
+    if (kakaoLoading) return;
+    setError("");
+    setKakaoLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "kakao",
+        options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding` },
+      });
+
+      if (error) {
+        console.error("Failed to start Kakao OAuth", error);
+        setError("카카오 로그인을 시작하지 못했어요. 잠시 후 다시 시도해주세요.");
+      }
+    } catch (error) {
+      console.error("Failed to start Kakao OAuth", error);
+      setError("카카오 로그인을 시작하지 못했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setKakaoLoading(false);
+    }
   };
 
   return (
@@ -94,9 +111,10 @@ export default function LoginPage() {
               size="lg"
               type="button"
               onClick={handleKakaoLogin}
+              disabled={kakaoLoading}
             >
               <ChatCircle size={28} weight="fill" />
-              카카오로 로그인하기
+              {kakaoLoading ? "카카오로 연결 중..." : "카카오로 로그인하기"}
             </Button>
 
             <div className="mb-6 flex items-center gap-3 text-mocha-500" aria-hidden="true">

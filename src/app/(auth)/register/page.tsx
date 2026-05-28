@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ChatCircle,
   EnvelopeSimple,
   Eye,
   EyeSlash,
@@ -30,6 +31,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [kakaoLoading, setKakaoLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,11 +63,27 @@ export default function RegisterPage() {
   };
 
   const handleKakaoLogin = async () => {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "kakao",
-      options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding` },
-    });
+    if (kakaoLoading) return;
+    setError("");
+    setKakaoLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "kakao",
+        options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding` },
+      });
+
+      if (error) {
+        console.error("Failed to start Kakao OAuth", error);
+        setError("카카오 로그인을 시작하지 못했어요. 잠시 후 다시 시도해주세요.");
+      }
+    } catch (error) {
+      console.error("Failed to start Kakao OAuth", error);
+      setError("카카오 로그인을 시작하지 못했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setKakaoLoading(false);
+    }
   };
 
   return (
@@ -90,13 +108,17 @@ export default function RegisterPage() {
               className="mb-7"
             />
 
-            <button
+            <Button
+              variant="kakao"
+              className="mb-6 w-full animate-fade-up text-lg font-extrabold"
+              size="lg"
               type="button"
               onClick={handleKakaoLogin}
-              className="mb-6 flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] text-lg font-extrabold text-[#191919] transition-all duration-150 hover:bg-[#FDD835] active:scale-[0.98] active:bg-[#FBC02D] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-coral-200"
+              disabled={kakaoLoading}
             >
-              💬 카카오로 시작하기
-            </button>
+              <ChatCircle size={28} weight="fill" />
+              {kakaoLoading ? "카카오로 연결 중..." : "카카오로 시작하기"}
+            </Button>
             <div className="mb-6 flex items-center gap-3 text-mocha-500" aria-hidden="true">
               <hr className="flex-1 border-mocha-200" />
               <span className="text-sm">또는 이메일로</span>
