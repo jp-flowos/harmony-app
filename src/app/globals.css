@@ -85,6 +85,11 @@
     #fdf8f0;
 }
 
+:root[data-font-scale="sm"] { font-size: 14px; }
+:root[data-font-scale="md"] { font-size: 16px; }
+:root[data-font-scale="lg"] { font-size: 18px; }
+:root[data-font-scale="xl"] { font-size: 20px; }
+
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;

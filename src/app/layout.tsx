@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { FontScaleProvider } from "@/components/providers/FontScaleProvider";
 import { ServiceWorkerRegistrar } from "@/components/system/ServiceWorkerRegistrar";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://harmony-app.kr";
@@ -75,7 +76,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="하모니" />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        {children}
+        <FontScaleProvider>{children}</FontScaleProvider>
         <ServiceWorkerRegistrar />
       </body>
     </html>
