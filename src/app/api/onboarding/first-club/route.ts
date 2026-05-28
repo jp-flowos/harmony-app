@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { clubMembers, clubs, hobbies, profiles, userHobbies } from "@/db/schema";
 import { serverError, successResponse, unauthorizedError } from "@/lib/api-response";
@@ -25,13 +25,13 @@ export async function GET() {
     }
 
     const userHobbyRows = await db
-      .select({ category: hobbies.category })
+      .select({ name: hobbies.name })
       .from(userHobbies)
       .innerJoin(hobbies, eq(userHobbies.hobbyId, hobbies.id))
       .where(eq(userHobbies.userId, user.id));
-    const hobbyCategories = userHobbyRows.map((hobby) => hobby.category);
+    const hobbyNames = userHobbyRows.map((hobby) => hobby.name);
 
-    const allClubs = await db.select().from(clubs).limit(200);
+    const allClubs = await db.select().from(clubs).orderBy(desc(clubs.createdAt)).limit(200);
     if (allClubs.length === 0) {
       return successResponse({ club: null });
     }
@@ -40,9 +40,12 @@ export async function GET() {
       .select({ clubId: clubMembers.clubId, userId: clubMembers.userId })
       .from(clubMembers)
       .where(
-        inArray(
-          clubMembers.clubId,
-          allClubs.map((club) => club.id)
+        and(
+          inArray(
+            clubMembers.clubId,
+            allClubs.map((club) => club.id)
+          ),
+          eq(clubMembers.status, "active")
         )
       );
 
@@ -67,7 +70,7 @@ export async function GET() {
         id: user.id,
         region: me.sido,
         birthYear: me.birthYear ?? null,
-        hobbies: hobbyCategories,
+        hobbies: hobbyNames,
       },
       clubsForScoring
     );
