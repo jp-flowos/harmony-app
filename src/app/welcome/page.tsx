@@ -72,6 +72,16 @@ export default function WelcomePage() {
     state === "ready" && data.regionMemberCount > 0
       ? `${data.regionMemberCount.toLocaleString("ko-KR")}명`
       : "새로운 이웃";
+  const peersWithKeys = data.peerSamples.map((peer) => {
+    const samePeerPosition = data.peerSamples
+      .slice(0, data.peerSamples.indexOf(peer) + 1)
+      .filter((candidate) => candidate.nickname === peer.nickname).length;
+
+    return {
+      ...peer,
+      key: `${peer.nickname}-${peer.avatarUrl ?? "avatarless"}-${samePeerPosition}`,
+    };
+  });
 
   return (
     <section className="fixed inset-0 z-[60] flex min-h-screen items-center justify-center overflow-hidden bg-cream-50 px-5 py-8">
@@ -105,8 +115,8 @@ export default function WelcomePage() {
         {hasPeers && (
           <div className="mt-8 flex flex-col items-center gap-3">
             <div className="flex -space-x-3">
-              {data.peerSamples.map((peer) => (
-                <Avatar key={peer.nickname} className="h-14 w-14 border-4 border-cream-50">
+              {peersWithKeys.map((peer) => (
+                <Avatar key={peer.key} className="h-14 w-14 border-4 border-cream-50">
                   {peer.avatarUrl && <AvatarImage src={peer.avatarUrl} alt="" />}
                   <AvatarFallback>{peer.nickname.slice(0, 1)}</AvatarFallback>
                 </Avatar>
@@ -118,7 +128,7 @@ export default function WelcomePage() {
           </div>
         )}
 
-        <Button asChild size="lg" className="mt-10 h-18 w-full rounded-2xl text-2xl">
+        <Button asChild size="lg" className="mt-10 min-h-[72px] w-full rounded-2xl text-2xl">
           <Link href="/">
             다음
             <ArrowRight size={28} weight="bold" />
