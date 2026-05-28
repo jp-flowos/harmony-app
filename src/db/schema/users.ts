@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -20,25 +21,29 @@ export const verificationTypeEnum = pgEnum("h_verification_type", [
   "first_meeting",
 ]);
 
-export const profiles = pgTable("h_profiles", {
-  id: text("id").primaryKey(), // Supabase auth user id
-  nickname: text("nickname").notNull(),
-  birthYear: integer("birth_year"),
-  region: text("region"),
-  sido: text("sido"),
-  sigungu: text("sigungu"),
-  fontScale: text("font_scale").notNull().default("lg"),
-  prefersVoiceGuide: boolean("prefers_voice_guide").notNull().default(false),
-  kakaoShareDoneAt: timestamp("kakao_share_done_at"),
-  bio: text("bio"),
-  avatarUrl: text("avatar_url"),
-  photoUrls: jsonb("photo_urls").$type<string[]>().default([]),
-  isVerified: boolean("is_verified").default(false),
-  subscriptionTier: subscriptionTierEnum("subscription_tier").default("free"),
-  activityScore: integer("activity_score").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const profiles = pgTable(
+  "h_profiles",
+  {
+    id: text("id").primaryKey(), // Supabase auth user id
+    nickname: text("nickname").notNull(),
+    birthYear: integer("birth_year"),
+    region: text("region"),
+    sido: text("sido"),
+    sigungu: text("sigungu"),
+    fontScale: text("font_scale").notNull().default("lg"),
+    prefersVoiceGuide: boolean("prefers_voice_guide").notNull().default(false),
+    kakaoShareDoneAt: timestamp("kakao_share_done_at"),
+    bio: text("bio"),
+    avatarUrl: text("avatar_url"),
+    photoUrls: jsonb("photo_urls").$type<string[]>().default([]),
+    isVerified: boolean("is_verified").default(false),
+    subscriptionTier: subscriptionTierEnum("subscription_tier").default("free"),
+    activityScore: integer("activity_score").default(0),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => [index("h_idx_profiles_sido_sigungu").on(t.sido, t.sigungu)]
+);
 
 export const hobbies = pgTable("h_hobbies", {
   id: text("id").primaryKey(),
