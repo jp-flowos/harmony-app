@@ -1,243 +1,216 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Heart, MapPin, Sparkle, UsersThree } from "@phosphor-icons/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
+import { StepFontScale } from "@/components/onboarding/StepFontScale";
+import { StepHobby } from "@/components/onboarding/StepHobby";
+import { StepNickname } from "@/components/onboarding/StepNickname";
+import { StepRegion } from "@/components/onboarding/StepRegion";
+import { useFontScale } from "@/components/providers/FontScaleProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Greeting } from "@/components/ui/greeting";
 import { StepIndicator } from "@/components/ui/step-indicator";
+import { isVoiceGuideEnabled } from "@/lib/voice/speak";
 
-const regions = [
-  "서울",
-  "경기",
-  "인천",
-  "부산",
-  "대구",
-  "대전",
-  "광주",
-  "울산",
-  "세종",
-  "강원",
-  "충북",
-  "충남",
-  "전북",
-  "전남",
-  "경북",
-  "경남",
-  "제주",
+type OnboardingStep = "font" | "nickname" | "region" | "hobby";
+
+interface SavedProgress {
+  step?: OnboardingStep;
+  nickname?: string;
+  sido?: string;
+  sigungu?: string;
+  hobbyId?: string;
+}
+
+const STORAGE_KEY = "harmony.onboarding.progress";
+
+const STEPS: { id: OnboardingStep; label: string }[] = [
+  { id: "font", label: "글자" },
+  { id: "nickname", label: "이름" },
+  { id: "region", label: "지역" },
+  { id: "hobby", label: "취미" },
 ];
 
-const hobbyCategories = [
-  { category: "운동", items: ["등산", "골프", "수영", "요가", "배드민턴", "탁구", "걷기"] },
-  { category: "문화", items: ["독서", "영화", "음악감상", "미술", "사진", "서예"] },
-  { category: "생활", items: ["요리", "원예", "여행", "낚시", "바둑", "댄스"] },
-  { category: "교육", items: ["외국어", "컴퓨터", "악기연주", "역사탐방"] },
-];
+function isOnboardingStep(value: unknown): value is OnboardingStep {
+  return STEPS.some((step) => step.id === value);
+}
 
-const sampleClubs = [
-  {
-    id: "1",
-    name: "서울 등산 모임",
-    category: "등산",
-    members: 45,
-    description: "매주 토요일 서울 근교 산행",
-  },
-  {
-    id: "2",
-    name: "골프 친구들",
-    category: "골프",
-    members: 32,
-    description: "월 2회 정기 라운딩",
-  },
-  {
-    id: "3",
-    name: "독서 클럽",
-    category: "독서",
-    members: 28,
-    description: "매월 1권 완독 후 토론",
-  },
-];
+function readProgress(): SavedProgress | null {
+  if (typeof window === "undefined") return null;
 
-type Step = "region" | "hobby" | "club";
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as SavedProgress;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeProgress(progress: SavedProgress): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  } catch {
+    // Storage is best-effort only; onboarding should keep working without it.
+  }
+}
+
+function clearProgress(): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Ignore restricted storage contexts.
+  }
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("region");
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [selectedHobbies, setSelectedHobbies] = useState<string[]>([]);
+  const { scale } = useFontScale();
+  const [step, setStep] = useState<OnboardingStep>("font");
+  const [nickname, setNickname] = useState("");
+  const [sido, setSido] = useState("");
+  const [sigungu, setSigungu] = useState("");
+  const [hobbyId, setHobbyId] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [restored, setRestored] = useState(false);
 
-  const toggleHobby = (hobby: string) => {
-    setSelectedHobbies((prev) =>
-      prev.includes(hobby) ? prev.filter((h) => h !== hobby) : [...prev, hobby]
-    );
-  };
+  const currentStep = STEPS.findIndex((item) => item.id === step) + 1;
 
-  const currentNum = step === "region" ? 1 : step === "hobby" ? 2 : 3;
+  useEffect(() => {
+    const saved = readProgress();
+
+    if (saved) {
+      if (isOnboardingStep(saved.step)) setStep(saved.step);
+      if (typeof saved.nickname === "string") setNickname(saved.nickname);
+      if (typeof saved.sido === "string") setSido(saved.sido);
+      if (typeof saved.sigungu === "string") setSigungu(saved.sigungu);
+      if (typeof saved.hobbyId === "string") setHobbyId(saved.hobbyId);
+    }
+
+    setRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!restored) return;
+
+    writeProgress({
+      step,
+      nickname,
+      sido,
+      sigungu,
+      hobbyId,
+    });
+  }, [hobbyId, nickname, restored, sido, sigungu, step]);
+
+  function goToStep(nextStep: OnboardingStep) {
+    setError("");
+    setStep(nextStep);
+  }
+
+  async function handleComplete() {
+    if (!nickname.trim() || !sido || !hobbyId || loading) return;
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nickname: nickname.trim(),
+          sido,
+          sigungu: sigungu.trim(),
+          fontScale: scale,
+          prefersVoiceGuide: isVoiceGuideEnabled(),
+          hobbyId,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as { success?: boolean } | null;
+
+      if (!response.ok || payload?.success === false) {
+        throw new Error("Onboarding complete request failed");
+      }
+
+      clearProgress();
+      router.push("/welcome");
+      router.refresh();
+    } catch {
+      setError("온보딩 정보를 저장하지 못했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <Card className="overflow-hidden">
-      <CardContent className="p-7 sm:p-8">
-        <div className="mb-7 flex justify-center">
-          <StepIndicator
-            steps={[{ label: "지역" }, { label: "취미" }, { label: "클럽" }]}
-            current={currentNum}
-            ariaLabel="시작하기 진행 단계"
-          />
+      <CardContent className="p-6 sm:p-8">
+        <div className="mb-6 flex flex-col gap-4">
+          <div className="flex justify-end">
+            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/")}>
+              건너뛰기
+            </Button>
+          </div>
+          <div className="flex justify-center overflow-x-auto pb-1">
+            <StepIndicator
+              steps={STEPS.map(({ label }) => ({ label }))}
+              current={currentStep}
+              ariaLabel="온보딩 진행 단계"
+              className="[&>div>div[aria-hidden='true']]:mx-1 [&>div>div[aria-hidden='true']]:w-4 sm:[&>div>div[aria-hidden='true']]:mx-2 sm:[&>div>div[aria-hidden='true']]:w-12"
+            />
+          </div>
         </div>
 
+        {error && <ErrorBanner message={error} />}
+
+        {step === "font" && <StepFontScale onNext={() => goToStep("nickname")} />}
+
+        {step === "nickname" && (
+          <StepNickname value={nickname} onChange={setNickname} onNext={() => goToStep("region")} />
+        )}
+
         {step === "region" && (
-          <>
-            <Greeting
-              icon={<MapPin size={32} weight="duotone" />}
-              title="어디에 살고 계신가요?"
-              subtitle="가까운 지역의 모임을 추천해드려요"
-              className="mb-6"
-            />
-            <div className="grid grid-cols-3 gap-3">
-              {regions.map((region) => {
-                const isActive = selectedRegion === region;
-                return (
-                  <button
-                    key={region}
-                    type="button"
-                    onClick={() => setSelectedRegion(region)}
-                    aria-pressed={isActive}
-                    className={`min-h-[56px] rounded-2xl border-2 text-lg font-bold transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-4 focus:ring-coral-200 ${
-                      isActive
-                        ? "bg-coral-500 border-coral-500 text-white shadow-warm"
-                        : "bg-white border-mocha-200 text-mocha-900 hover:border-coral-400 hover:bg-coral-50"
-                    }`}
-                  >
-                    {region}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-7">
-              <Button
-                className="w-full"
-                size="lg"
-                disabled={!selectedRegion}
-                onClick={() => setStep("hobby")}
-              >
-                다음 단계로
-                <ArrowRight size={24} weight="bold" />
-              </Button>
-            </div>
-          </>
+          <StepRegion
+            sido={sido}
+            sigungu={sigungu}
+            onSidoChange={setSido}
+            onSigunguChange={setSigungu}
+            onNext={() => goToStep("hobby")}
+            onBack={() => goToStep("nickname")}
+          />
         )}
 
         {step === "hobby" && (
-          <>
-            <Greeting
-              icon={<Heart size={32} weight="duotone" />}
-              title="어떤 활동을 좋아하시나요?"
-              subtitle={`관심 있는 활동을 3개 이상 골라주세요 · ${selectedHobbies.length}개 선택됨`}
-              className="mb-6"
-            />
-            <div className="space-y-6">
-              {hobbyCategories.map((cat) => (
-                <div key={cat.category} className="space-y-3">
-                  <h4 className="flex items-center gap-2 text-lg font-extrabold text-mocha-900">
-                    <span className="h-5 w-1 rounded-full bg-coral-500" />
-                    {cat.category}
-                  </h4>
-                  <div className="flex flex-wrap gap-2.5">
-                    {cat.items.map((hobby) => {
-                      const isSelected = selectedHobbies.includes(hobby);
-                      return (
-                        <button
-                          key={hobby}
-                          type="button"
-                          onClick={() => toggleHobby(hobby)}
-                          aria-pressed={isSelected}
-                          className={`min-h-[52px] rounded-full border-2 px-5 text-lg font-bold transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-4 focus:ring-coral-200 ${
-                            isSelected
-                              ? "bg-coral-500 border-coral-500 text-white shadow-warm"
-                              : "bg-white border-mocha-200 text-mocha-900 hover:border-coral-400 hover:bg-coral-50"
-                          }`}
-                        >
-                          {hobby}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 flex gap-3">
-              <Button
-                variant="outline"
-                size="lg"
-                className="flex-1"
-                onClick={() => setStep("region")}
-              >
-                <ArrowLeft size={24} weight="bold" />
-                이전
-              </Button>
-              <Button
-                className="flex-1"
-                size="lg"
-                disabled={selectedHobbies.length < 3}
-                onClick={() => setStep("club")}
-              >
-                다음 ({selectedHobbies.length}/3)
-                <ArrowRight size={24} weight="bold" />
-              </Button>
-            </div>
-          </>
-        )}
-
-        {step === "club" && (
-          <>
-            <Greeting
-              icon={<UsersThree size={32} weight="duotone" />}
-              title="이런 모임은 어떠세요?"
-              subtitle="관심사에 맞춰 추천해드린 모임이에요"
-              className="mb-6"
-            />
-            <div className="stagger-children space-y-3">
-              {sampleClubs.map((club) => (
-                <div
-                  key={club.id}
-                  className="animate-fade-up rounded-2xl border-2 border-mocha-100 bg-white p-5 transition-all hover:border-coral-300 hover:shadow-soft"
-                >
-                  <div className="mb-2 flex items-start justify-between gap-3">
-                    <h4 className="text-xl font-extrabold text-mocha-900 leading-snug tracking-tight">
-                      {club.name}
-                    </h4>
-                    <Badge variant="secondary">{club.category}</Badge>
-                  </div>
-                  <p className="mb-4 text-lg text-mocha-700 leading-relaxed">{club.description}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-base font-semibold text-mocha-700">
-                      <UsersThree size={20} weight="duotone" className="text-coral-500" />
-                      멤버 {club.members}명
-                    </span>
-                    <Button size="sm">가입하기</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 flex gap-3">
-              <Button
-                variant="ghost"
-                size="lg"
-                className="flex-1"
-                onClick={() => router.push("/club")}
-              >
-                건너뛰기
-              </Button>
-              <Button className="flex-1" size="lg" onClick={() => router.push("/club")}>
-                <Sparkle size={24} weight="fill" />
-                완료
-              </Button>
-            </div>
-          </>
+          <StepHobby
+            selectedHobbyId={hobbyId}
+            onChange={setHobbyId}
+            onBack={() => goToStep("region")}
+            onComplete={handleComplete}
+            loading={loading}
+          />
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div
+      role="alert"
+      className="mb-5 flex items-start gap-3 rounded-2xl border-2 border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] p-4 text-base font-medium text-[var(--color-danger)]"
+    >
+      <WarningCircle size={26} weight="fill" className="mt-0.5 shrink-0" />
+      <span className="pt-0.5">{message}</span>
+    </div>
   );
 }
