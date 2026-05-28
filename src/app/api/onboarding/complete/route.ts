@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
-import { profiles, userHobbies, verificationBadges } from "@/db/schema";
+import { hobbies, profiles, userHobbies, verificationBadges } from "@/db/schema";
 import {
   serverError,
   successResponse,
@@ -38,6 +38,16 @@ export async function POST(request: NextRequest) {
     const sigungu = parsed.data.sigungu || null;
     const region = sigungu ? `${sido} ${sigungu}` : sido;
 
+    const [existingHobby] = await db
+      .select({ id: hobbies.id })
+      .from(hobbies)
+      .where(eq(hobbies.id, hobbyId))
+      .limit(1);
+
+    if (!existingHobby) {
+      return validationError("선택한 취미를 찾을 수 없습니다");
+    }
+
     await db.transaction(async (tx) => {
       const [existingProfile] = await tx
         .select({ id: profiles.id })
@@ -69,13 +79,25 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      await tx.delete(userHobbies).where(eq(userHobbies.userId, user.id));
+
       await tx.insert(userHobbies).values({ userId: user.id, hobbyId }).onConflictDoNothing();
 
-      await tx.insert(verificationBadges).values({
-        id: crypto.randomUUID(),
-        userId: user.id,
-        type: "first_meeting",
-      });
+      const [existingBadge] = await tx
+        .select({ id: verificationBadges.id })
+        .from(verificationBadges)
+        .where(
+          and(eq(verificationBadges.userId, user.id), eq(verificationBadges.type, "first_meeting"))
+        )
+        .limit(1);
+
+      if (!existingBadge) {
+        await tx.insert(verificationBadges).values({
+          id: crypto.randomUUID(),
+          userId: user.id,
+          type: "first_meeting",
+        });
+      }
     });
 
     return successResponse({ ok: true });
