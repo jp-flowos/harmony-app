@@ -16,13 +16,19 @@ export const verificationTypeEnum = pgEnum("h_verification_type", [
   "face",
   "activity",
   "review",
+  "first_meeting",
 ]);
 
 export const profiles = pgTable("h_profiles", {
   id: text("id").primaryKey(), // Supabase auth user id
   nickname: text("nickname").notNull(),
   birthYear: integer("birth_year"),
-  region: text("region").notNull(),
+  region: text("region"),
+  sido: text("sido"),
+  sigungu: text("sigungu"),
+  fontScale: text("font_scale").notNull().default("lg"),
+  prefersVoiceGuide: boolean("prefers_voice_guide").notNull().default(false),
+  kakaoShareDoneAt: timestamp("kakao_share_done_at"),
   bio: text("bio"),
   avatarUrl: text("avatar_url"),
   photoUrls: jsonb("photo_urls").$type<string[]>().default([]),
