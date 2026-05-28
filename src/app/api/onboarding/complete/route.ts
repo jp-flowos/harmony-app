@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
@@ -49,12 +49,6 @@ export async function POST(request: NextRequest) {
     }
 
     await db.transaction(async (tx) => {
-      const [existingProfile] = await tx
-        .select({ id: profiles.id })
-        .from(profiles)
-        .where(eq(profiles.id, user.id))
-        .limit(1);
-
       const profileValues = {
         nickname,
         region,
@@ -64,40 +58,32 @@ export async function POST(request: NextRequest) {
         prefersVoiceGuide,
       };
 
-      if (existingProfile) {
-        await tx
-          .update(profiles)
-          .set({
-            ...profileValues,
-            updatedAt: new Date(),
-          })
-          .where(eq(profiles.id, user.id));
-      } else {
-        await tx.insert(profiles).values({
+      await tx
+        .insert(profiles)
+        .values({
           id: user.id,
           ...profileValues,
+        })
+        .onConflictDoUpdate({
+          target: profiles.id,
+          set: {
+            ...profileValues,
+            updatedAt: new Date(),
+          },
         });
-      }
 
       await tx.delete(userHobbies).where(eq(userHobbies.userId, user.id));
 
       await tx.insert(userHobbies).values({ userId: user.id, hobbyId }).onConflictDoNothing();
 
-      const [existingBadge] = await tx
-        .select({ id: verificationBadges.id })
-        .from(verificationBadges)
-        .where(
-          and(eq(verificationBadges.userId, user.id), eq(verificationBadges.type, "first_meeting"))
-        )
-        .limit(1);
-
-      if (!existingBadge) {
-        await tx.insert(verificationBadges).values({
+      await tx
+        .insert(verificationBadges)
+        .values({
           id: crypto.randomUUID(),
           userId: user.id,
           type: "first_meeting",
-        });
-      }
+        })
+        .onConflictDoNothing();
     });
 
     return successResponse({ ok: true });

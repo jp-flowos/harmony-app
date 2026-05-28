@@ -8,6 +8,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const subscriptionTierEnum = pgEnum("h_subscription_tier", ["free", "premium"]);
@@ -59,12 +60,20 @@ export const userHobbies = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.hobbyId] })]
 );
 
-export const verificationBadges = pgTable("h_verification_badges", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
-  type: verificationTypeEnum("type").notNull(),
-  verifiedAt: timestamp("verified_at").defaultNow(),
-});
+export const verificationBadges = pgTable(
+  "h_verification_badges",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
+    type: verificationTypeEnum("type").notNull(),
+    verifiedAt: timestamp("verified_at").defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("h_verification_badges_user_type_unique")
+      .on(t.userId, t.type)
+      .where(sql`${t.userId} is not null`),
+  ]
+);
 
 export const pushSubscriptions = pgTable("h_push_subscriptions", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()::text`),
