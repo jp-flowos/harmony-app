@@ -42,7 +42,10 @@ export const profiles = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
-  (t) => [index("h_idx_profiles_sido_sigungu").on(t.sido, t.sigungu)]
+  (t) => [
+    index("h_idx_profiles_sido_sigungu").on(t.sido, t.sigungu),
+    index("h_idx_profiles_sido_created").on(t.sido, t.createdAt.desc()),
+  ]
 );
 
 export const hobbies = pgTable("h_hobbies", {

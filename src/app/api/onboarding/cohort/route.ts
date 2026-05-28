@@ -28,7 +28,6 @@ export async function GET() {
     const [me] = await db
       .select({
         sido: profiles.sido,
-        sigungu: profiles.sigungu,
       })
       .from(profiles)
       .where(eq(profiles.id, user.id))
