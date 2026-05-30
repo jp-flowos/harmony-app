@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { FontScaleProvider } from "@/components/providers/FontScaleProvider";
 import { ServiceWorkerRegistrar } from "@/components/system/ServiceWorkerRegistrar";
@@ -87,6 +88,10 @@ export default function RootLayout({
       <body className="min-h-screen bg-background font-sans antialiased">
         <FontScaleProvider>{children}</FontScaleProvider>
         <ServiceWorkerRegistrar />
+        <Script
+          src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

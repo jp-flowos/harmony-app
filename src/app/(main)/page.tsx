@@ -17,6 +17,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
+import { KakaoShareButton } from "@/components/onboarding/KakaoShareButton";
 import { OnboardingCarousel } from "@/components/onboarding/OnboardingCarousel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ const popularPosts = [
 const fortuneScoreStars = [1, 2, 3, 4, 5] as const;
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 const personalRecommendations = [
   {
@@ -86,6 +88,7 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
 
   let showCarousel = false;
+  let showShareButton = false;
   if (user) {
     const [me] = await db
       .select({ createdAt: profiles.createdAt })
@@ -93,8 +96,10 @@ export default async function HomePage() {
       .where(eq(profiles.id, user.id))
       .limit(1);
 
-    if (me?.createdAt && Date.now() - me.createdAt.getTime() < SEVEN_DAYS_MS) {
-      showCarousel = true;
+    if (me?.createdAt) {
+      const age = Date.now() - me.createdAt.getTime();
+      showCarousel = age < SEVEN_DAYS_MS;
+      showShareButton = age < ONE_DAY_MS;
     }
   }
 
@@ -105,6 +110,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-7 p-5 pb-6">
       {showCarousel && <OnboardingCarousel />}
+      {showShareButton && <KakaoShareButton />}
 
       {/* Welcome header */}
       <header className="flex items-start justify-between pt-3">
