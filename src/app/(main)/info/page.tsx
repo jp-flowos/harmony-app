@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { infoContents } from "@/db/schema";
 
+export const dynamic = "force-dynamic";
+
 interface InfoCategory {
   key: "health" | "finance" | "travel" | "hobby" | "gov";
   label: string;

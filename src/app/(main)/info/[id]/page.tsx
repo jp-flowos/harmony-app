@@ -9,6 +9,8 @@ import { infoContents } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 import { InfoComments } from "./InfoComments";
 
+export const dynamic = "force-dynamic";
+
 const CATEGORY_LABEL: Record<string, string> = {
   health: "건강",
   finance: "재테크",
