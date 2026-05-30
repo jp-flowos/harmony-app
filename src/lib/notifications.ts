@@ -114,3 +114,43 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   reviewRequest: true,
   announcement: true,
 };
+
+// --- Client-side push subscription ---
+// Invoked only in the browser (from NotificationOptInCard). The browser globals
+// are touched lazily, so importing this module on the server stays safe.
+
+function urlBase64ToUint8Array(base64: string) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const normalized = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(normalized);
+  const output = new Uint8Array(new ArrayBuffer(raw.length));
+  for (let i = 0; i < raw.length; i++) {
+    output[i] = raw.charCodeAt(i);
+  }
+  return output;
+}
+
+/**
+ * Subscribes the current browser to Web Push and registers the subscription
+ * with the API. Returns false (without throwing) when push is unavailable —
+ * no VAPID key, no service worker support, or no active registration.
+ */
+export async function subscribeUser(): Promise<boolean> {
+  const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  if (!vapidKey) return false;
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return false;
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(vapidKey),
+  });
+
+  const json = subscription.toJSON();
+  const res = await fetch("/api/notifications", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "subscribe", endpoint: json.endpoint, keys: json.keys }),
+  });
+  return res.ok;
+}

@@ -18,6 +18,7 @@ import {
 import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { KakaoShareButton } from "@/components/onboarding/KakaoShareButton";
+import { NotificationOptInCard } from "@/components/onboarding/NotificationOptInCard";
 import { OnboardingCarousel } from "@/components/onboarding/OnboardingCarousel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -111,6 +112,7 @@ export default async function HomePage() {
     <div className="space-y-7 p-5 pb-6">
       {showCarousel && <OnboardingCarousel />}
       {showShareButton && <KakaoShareButton />}
+      {showCarousel && <NotificationOptInCard />}
 
       {/* Welcome header */}
       <header className="flex items-start justify-between pt-3">
