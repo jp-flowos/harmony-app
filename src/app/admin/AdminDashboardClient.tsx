@@ -99,6 +99,9 @@ const subscriptionStats = [
   { month: "2024-03", count: 156, revenue: 1560000 },
 ];
 
+const systemLabUrl =
+  process.env.NEXT_PUBLIC_HARMONY_SYSTEM_LAB_URL ?? "https://harmony-system-lab.vercel.app";
+
 export default function AdminDashboardClient() {
   const [reports, setReports] = useState(initialReports);
   const [contents, setContents] = useState(initialContents);
@@ -135,7 +138,14 @@ export default function AdminDashboardClient() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-5xl space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900">관리자 대시보드</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">관리자 대시보드</h1>
+          <Button asChild variant="outline" size="sm">
+            <a href={systemLabUrl} target="_blank" rel="noreferrer">
+              시스템 랩 열기
+            </a>
+          </Button>
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
