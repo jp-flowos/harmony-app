@@ -14,6 +14,8 @@ const publicPaths = [
   "/icon",
   "/apple-icon",
   "/icon-maskable",
+  // 공개 공유 페이지 — trailing slash 필수 ("/s"는 /search, /subscribe까지 매칭됨)
+  "/s/",
 ];
 
 export async function proxy(request: NextRequest) {
