@@ -1,14 +1,9 @@
 "use client";
 
-import {
-  ChatCircle,
-  ClockCounterClockwise,
-  ShareNetwork,
-  Sparkle,
-  Star,
-} from "@phosphor-icons/react";
-import { useCallback, useState } from "react";
+import { ChatCircle, ClockCounterClockwise, Sparkle, Star } from "@phosphor-icons/react";
+import { useState } from "react";
 import { FortuneCard, ScoreStars } from "@/components/fortune/FortuneCard";
+import { ShareBar } from "@/components/share/ShareBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { generateFortune, getZodiacEmoji, ZODIAC_ANIMALS, type ZodiacAnimal } from "@/lib/fortune";
 
 function getToday(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
 }
 
 function getLast7Days(): string[] {
@@ -37,20 +32,6 @@ export default function FortunePage() {
   const today = getToday();
   const fortune = generateFortune(today, selectedZodiac);
   const last7 = getLast7Days();
-
-  const handleShare = useCallback(() => {
-    if (typeof navigator !== "undefined" && navigator.share) {
-      navigator
-        .share({
-          title: `${fortune.zodiac}띠 오늘의 운세`,
-          text: fortune.general,
-          url: window.location.href,
-        })
-        .catch(() => {
-          /* user cancelled */
-        });
-    }
-  }, [fortune]);
 
   return (
     <div className="space-y-5 p-5">
@@ -101,10 +82,11 @@ export default function FortunePage() {
 
         <TabsContent value="today" className="space-y-4">
           <FortuneCard fortune={fortune} />
-          <Button variant="outline" size="lg" className="w-full" onClick={handleShare}>
-            <ShareNetwork size={24} weight="bold" />
-            운세 공유하기
-          </Button>
+          <ShareBar
+            title={`${fortune.zodiac}띠 오늘의 운세`}
+            description={fortune.general}
+            path={`/s/fortune/${today}/${encodeURIComponent(selectedZodiac)}`}
+          />
         </TabsContent>
 
         <TabsContent value="comments" className="space-y-4">
