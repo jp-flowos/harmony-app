@@ -1,5 +1,16 @@
+import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
+import { z } from "zod";
+import { db } from "@/db";
+import { clubMembers, clubs } from "@/db/schema";
+import {
+  serverError,
+  successResponse,
+  unauthorizedError,
+  validationError,
+} from "@/lib/api-response";
 import { errorResponse, jsonResponse } from "@/lib/api-utils";
+import { createClient } from "@/lib/supabase/server";
 
 // GET /api/clubs - 클럽 목록
 export async function GET(request: NextRequest) {
@@ -17,36 +28,41 @@ export async function GET(request: NextRequest) {
   });
 }
 
-// POST /api/clubs - 클럽 생성
+const CreateClubSchema = z.object({
+  name: z.string().trim().min(2, "클럽 이름은 2자 이상이어야 해요").max(30),
+  category: z.string().trim().min(1, "카테고리를 선택해주세요").max(20),
+  region: z.string().trim().min(1, "지역을 선택해주세요").max(20),
+  description: z.string().trim().min(1, "클럽 소개를 입력해주세요").max(500),
+  joinType: z.enum(["open", "approval"]).default("open"),
+});
+
+// POST /api/clubs - 클럽 생성 (생성자가 owner로 등록)
 export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return unauthorizedError();
+
+  const parsed = CreateClubSchema.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return validationError(parsed.error.issues[0]?.message ?? "입력값이 올바르지 않습니다");
+  }
+
   try {
-    const body = await request.json();
-    const { name, category, region, description, joinType } = body as {
-      name?: string;
-      category?: string;
-      region?: string;
-      description?: string;
-      joinType?: string;
-    };
-
-    if (!name || !category || !region || !description) {
-      return errorResponse("필수 항목을 입력해주세요");
-    }
-
-    // TODO: Auth check + DB insert
-    const club = {
-      id: crypto.randomUUID(),
-      name,
-      category,
-      region,
-      description,
-      joinType: joinType ?? "open",
+    const clubId = crypto.randomUUID();
+    await db.insert(clubs).values({
+      id: clubId,
+      ...parsed.data,
+      ownerId: user.id,
       memberCount: 1,
-      createdAt: new Date().toISOString(),
-    };
+    });
+    await db.insert(clubMembers).values({ clubId, userId: user.id, role: "owner" });
 
-    return jsonResponse(club, 201);
-  } catch {
-    return errorResponse("잘못된 요청입니다");
+    const [created] = await db.select().from(clubs).where(eq(clubs.id, clubId)).limit(1);
+    return successResponse(created, 201);
+  } catch (err) {
+    console.error("[clubs POST]", err);
+    return serverError();
   }
 }

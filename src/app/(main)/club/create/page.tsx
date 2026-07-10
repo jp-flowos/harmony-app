@@ -63,11 +63,35 @@ export default function CreateClubPage() {
   const [description, setDescription] = useState("");
   const [joinType, setJoinType] = useState("open");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: API call
-    router.push("/club");
-  };
+    if (!category || !region) {
+      setError("카테고리와 지역을 선택해주세요");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/clubs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, category, region, description, joinType }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        setError(json.error?.message ?? "클럽을 만들지 못했어요. 다시 시도해주세요");
+        return;
+      }
+      router.push(`/club/${json.data.id}`);
+    } catch {
+      setError("클럽을 만들지 못했어요. 다시 시도해주세요");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="space-y-4 p-4">
@@ -156,8 +180,9 @@ export default function CreateClubPage() {
               </Select>
             </div>
 
-            <Button className="w-full" size="lg" type="submit">
-              클럽 만들기
+            {error && <p className="text-base font-semibold text-red-600">{error}</p>}
+            <Button className="w-full" size="lg" type="submit" disabled={submitting}>
+              {submitting ? "만드는 중..." : "클럽 만들기"}
             </Button>
           </form>
         </CardContent>
