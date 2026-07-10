@@ -14,12 +14,25 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 const CreateMeetingSchema = z.object({
-  title: z.string().trim().min(2, "모임 이름은 2자 이상이어야 해요").max(50),
+  title: z
+    .string()
+    .trim()
+    .min(2, "모임 이름은 2자 이상이어야 해요")
+    .max(50, "모임 이름은 50자까지 입력할 수 있어요"),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "날짜를 선택해주세요"),
   time: z.string().regex(/^\d{2}:\d{2}$/, "시간을 선택해주세요"),
-  location: z.string().trim().min(1, "장소를 입력해주세요").max(100),
-  maxParticipants: z.number().int().min(2).max(200).default(20),
-  description: z.string().trim().max(500).optional(),
+  location: z
+    .string()
+    .trim()
+    .min(1, "장소를 입력해주세요")
+    .max(100, "장소는 100자까지 입력할 수 있어요"),
+  maxParticipants: z
+    .number()
+    .int("인원 수가 올바르지 않아요")
+    .min(2, "최소 2명 이상이어야 해요")
+    .max(200, "최대 200명까지 가능해요")
+    .default(20),
+  description: z.string().trim().max(500, "설명은 500자까지 입력할 수 있어요").optional(),
 });
 
 // GET /api/clubs/[id]/meetings - 정기모임 목록 (참석 인원은 라이브 계산)

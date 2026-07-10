@@ -76,6 +76,7 @@ export default function CreateMeetingPage() {
                 placeholder="예) 7월 정기 산행"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                maxLength={50}
                 required
               />
             </div>
@@ -110,6 +111,7 @@ export default function CreateMeetingPage() {
                 placeholder="예) 북한산 우이역 1번 출구"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                maxLength={100}
                 required
               />
             </div>
@@ -133,6 +135,7 @@ export default function CreateMeetingPage() {
                 placeholder="모임에 대해 알려주세요"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                maxLength={500}
               />
             </div>
 
