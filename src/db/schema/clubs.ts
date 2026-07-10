@@ -115,3 +115,17 @@ export const meetingParticipants = pgTable(
   },
   (t) => [primaryKey({ columns: [t.meetingId, t.userId] })]
 );
+
+export const rsvpStatusEnum = pgEnum("h_rsvp_status", ["joined", "declined"]);
+
+// 비로그인 게스트의 초대장 응답 — guest_phone은 공개 페이지에 절대 노출 금지
+export const meetingRsvps = pgTable("h_meeting_rsvps", {
+  id: text("id").primaryKey(),
+  meetingId: text("meeting_id")
+    .notNull()
+    .references(() => clubMeetings.id, { onDelete: "cascade" }),
+  guestName: text("guest_name").notNull(),
+  guestPhone: text("guest_phone"),
+  status: rsvpStatusEnum("status").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
