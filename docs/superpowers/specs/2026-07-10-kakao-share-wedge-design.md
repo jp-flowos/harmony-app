@@ -170,3 +170,12 @@ DB 연동 없이 구현 — `generateFortune(date, zodiac)`이 결정적(determi
 - 게스트 RSVP 식별: **이름 필수 + 전화번호 선택** (시니어 입력 마찰 최소화, 초대장은 지인 카톡방에 뿌려지므로 이름으로 식별 가능)
 - 운세 공유는 DB 없이 deterministic 엔진 재사용 (기존 fortune wire-up 계획과 독립)
 - 공개 네임스페이스는 `/s/*` 단일 prefix로 통일 (proxy publicPaths 한 줄 관리)
+
+## 12. 구현 계획 작성 중 발견/결정 추가 (2026-07-10)
+
+- **클럽 도메인 전체가 스텁으로 확인됨** (`/api/clubs` POST 포함 전부 TODO, 클럽 상세/생성 페이지 목업). 초대장 흐름이 동작하려면 최소 wire-up이 필요해 범위에 추가: 클럽 생성 API+폼, 클럽 상세 페이지의 헤더/일정 탭 실데이터 전환. 클럽 목록/가입/게시판/사진/채팅/멤버 탭은 계속 목업 유지 (범위 밖).
+- **proxy publicPaths에는 `"/s/"` (trailing slash 필수)**: `"/s"`는 `startsWith` 매칭이라 `/search`, `/subscribe`까지 공개해버림.
+- **회원 참석 토글 API 추가** (`POST /api/clubs/[id]/meetings/[mid]/join`): 초대장의 참석 인원 합산(회원+게스트)이 의미 있으려면 회원 참석도 실제로 동작해야 함.
+- **`h_club_meetings.current_count`는 사용하지 않음**: 참석 인원은 항상 `h_meeting_participants`(joined) + `h_meeting_rsvps`(joined) 라이브 계산 (게스트/회원 두 경로라 저장 카운터는 drift 위험).
+- **OG 이미지 한글 폰트**: satori는 한글 폰트를 번들하지 않으므로 Pretendard-Bold.otf를 `src/assets/fonts/`에 번들 (앱 웹폰트와 동일 서체).
+- **미팅 일시는 KST instant로 저장**: `new Date(\`${date}T${time}:00+09:00\`)`로 쓰고, 표시는 `Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", ... })`.
