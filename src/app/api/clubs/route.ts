@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
@@ -9,7 +8,7 @@ import {
   unauthorizedError,
   validationError,
 } from "@/lib/api-response";
-import { errorResponse, jsonResponse } from "@/lib/api-utils";
+import { jsonResponse } from "@/lib/api-utils";
 import { createClient } from "@/lib/supabase/server";
 
 // GET /api/clubs - 클럽 목록
@@ -51,15 +50,20 @@ export async function POST(request: NextRequest) {
 
   try {
     const clubId = crypto.randomUUID();
-    await db.insert(clubs).values({
-      id: clubId,
-      ...parsed.data,
-      ownerId: user.id,
-      memberCount: 1,
+    const created = await db.transaction(async (tx) => {
+      const [club] = await tx
+        .insert(clubs)
+        .values({
+          id: clubId,
+          ...parsed.data,
+          ownerId: user.id,
+          memberCount: 1,
+        })
+        .returning();
+      await tx.insert(clubMembers).values({ clubId, userId: user.id, role: "owner" });
+      return club;
     });
-    await db.insert(clubMembers).values({ clubId, userId: user.id, role: "owner" });
 
-    const [created] = await db.select().from(clubs).where(eq(clubs.id, clubId)).limit(1);
     return successResponse(created, 201);
   } catch (err) {
     console.error("[clubs POST]", err);
