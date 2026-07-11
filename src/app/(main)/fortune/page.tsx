@@ -15,11 +15,12 @@ function getToday(): string {
 }
 
 function getLast7Days(): string[] {
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" });
   const days: string[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    days.push(d.toISOString().slice(0, 10));
+    days.push(fmt.format(d));
   }
   return days;
 }

@@ -20,8 +20,7 @@ function isAllowedDate(date: string): boolean {
 }
 
 function parseZodiac(raw: string): ZodiacAnimal | null {
-  const decoded = decodeURIComponent(raw);
-  return (ZODIAC_ANIMALS as readonly string[]).includes(decoded) ? (decoded as ZodiacAnimal) : null;
+  return (ZODIAC_ANIMALS as readonly string[]).includes(raw) ? (raw as ZodiacAnimal) : null;
 }
 
 interface Props {
