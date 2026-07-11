@@ -30,9 +30,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const row = await getMeeting(id);
   if (!row) return {};
   const { meeting, clubName } = row;
+  const title = `${clubName ?? "하모니"} · ${meeting.title}`;
+  const description = `${formatMeetingDate(meeting.date)} · ${meeting.location} · 참석 여부를 알려주세요`;
   return {
-    title: `${clubName ?? "하모니"} · ${meeting.title}`,
-    description: `${formatMeetingDate(meeting.date)} · ${meeting.location} · 참석 여부를 알려주세요`,
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { title, description },
   };
 }
 

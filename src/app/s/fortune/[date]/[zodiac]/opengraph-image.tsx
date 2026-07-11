@@ -9,10 +9,19 @@ interface Props {
   params: Promise<{ date: string; zodiac: string }>;
 }
 
+function decodeZodiac(raw: string): string {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 export default async function OgImage({ params }: Props) {
   const { date, zodiac: rawZodiac } = await params;
-  const zodiac: ZodiacAnimal = (ZODIAC_ANIMALS as readonly string[]).includes(rawZodiac)
-    ? (rawZodiac as ZodiacAnimal)
+  const decoded = decodeZodiac(rawZodiac);
+  const zodiac: ZodiacAnimal = (ZODIAC_ANIMALS as readonly string[]).includes(decoded)
+    ? (decoded as ZodiacAnimal)
     : "용";
   const fortune = generateFortune(date, zodiac);
   const stars = "★".repeat(fortune.score) + "☆".repeat(5 - fortune.score);

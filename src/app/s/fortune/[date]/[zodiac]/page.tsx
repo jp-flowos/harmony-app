@@ -20,7 +20,16 @@ function isAllowedDate(date: string): boolean {
 }
 
 function parseZodiac(raw: string): ZodiacAnimal | null {
-  return (ZODIAC_ANIMALS as readonly string[]).includes(raw) ? (raw as ZodiacAnimal) : null;
+  // Route params can arrive percent-encoded on some render paths (e.g. metadata);
+  // decodeURIComponent is idempotent on already-decoded Korean, and try/catch turns
+  // malformed input (stray %) into a 404 instead of a 500.
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+  return (ZODIAC_ANIMALS as readonly string[]).includes(decoded) ? (decoded as ZodiacAnimal) : null;
 }
 
 interface Props {
@@ -32,9 +41,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const zodiac = parseZodiac(rawZodiac);
   if (!zodiac || !DATE_RE.test(date)) return {};
   const fortune = generateFortune(date, zodiac);
+  const title = `${zodiac}띠 오늘의 운세 (${date})`;
+  const description = fortune.general;
   return {
-    title: `${zodiac}띠 오늘의 운세 (${date})`,
-    description: fortune.general,
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { title, description },
   };
 }
 
