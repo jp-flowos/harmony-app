@@ -74,7 +74,9 @@ git push origin main:main
 
 Expected: fast-forward push 성공. `git log --oneline origin/main..main`이 빈 출력.
 
-- [ ] **Step 2: Vercel Git 자동배포 연결**
+- [ ] **Step 2: Vercel Git 자동배포 연결 (사용자 확인 후)**
+
+git connect는 최초 연결 시 배포를 트리거할 수 있으므로(이미 배포된 코드와 동일해 실질 위험은 낮으나) 실행 전 사용자 확인을 받는다.
 
 ```bash
 npx vercel git connect --yes
@@ -102,7 +104,7 @@ VAPID_PRIVATE_KEY=<Step 3의 Private Key>
 VAPID_EMAIL=mailto:jp@flowos.work
 ```
 
-env 이름 3종은 `src/lib/notifications.ts:28-33`이 소비하는 정확한 이름이어야 한다.
+env 이름 3종은 `src/lib/notifications.ts:28-30`이 소비하는 정확한 이름이어야 한다 (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`는 `subscribeUser`의 라인 139에서도 소비).
 
 - [ ] **Step 5: Vercel env 등록 (production + development)**
 
@@ -134,6 +136,14 @@ git status --short
 # 예상: .env.local은 표시되지 않음 (gitignored), 기존 ?? public/icons/만 표시
 ```
 
+- [ ] **Step 8: Kakao OAuth 운영자 체크리스트 조기 전달**
+
+스펙이 Kakao OAuth를 "W1 최우선"으로 지정했고, 콘솔 작업은 Claude가 대신 못 하며 승인/도메인 이슈로 예측 불가한 지연이 생길 수 있다. 따라서 코드 작업(Task 2~4)과 **병렬로** 사용자가 처리하도록 이 시점에 아래 목록을 전달한다 (완료 검증은 Task 5 Step 3에서).
+
+1. **Supabase 콘솔**: Authentication → Providers → Kakao 활성화, Kakao REST API 키 + Client Secret 입력
+2. **Kakao Developers 콘솔**: 원본 앱 "하모니"(ID 1509591)에 Redirect URI 등록 — Supabase가 표시하는 콜백 URL (`https://<project-ref>.supabase.co/auth/v1/callback`)
+   - 주의: 테스트 앱("하모니-TEST")이 아니라 **원본 앱**에 등록 (키/도메인 등록이 앱별로 분리됨)
+
 ---
 
 ### Task 2: 클럽 가입/탈퇴 API 실DB 전환
@@ -142,10 +152,12 @@ git status --short
 - Modify: `src/app/api/clubs/[id]/join/route.ts` (전체 재작성 — 현재 TODO 스텁 + legacy `api-utils` 사용)
 
 **Interfaces:**
-- Consumes: `clubMembers`, `clubs` (`@/db/schema`), `@/lib/api-response`의 `errorResponse/forbiddenError/notFoundError/serverError/successResponse/unauthorizedError`, `createClient` (`@/lib/supabase/server`)
+- Consumes: `clubMembers`, `clubs` (`@/db/schema`), `@/lib/api-response`의 `errorResponse/forbiddenError/notFoundError/serverError/successResponse/unauthorizedError`, `createClient` (`@/lib/supabase/server`), `sql`/`and`/`eq` (drizzle-orm)
 - Produces:
   - `POST /api/clubs/[id]/join` → 201 `{ success: true, data: { joined: true } }` (신규), 200 (이미 가입, 멱등), 401/404, 409 `APPROVAL_REQUIRED`, 403 (banned)
   - `DELETE /api/clubs/[id]/join` → 200 `{ success: true, data: { left: true } }`, 401/404, 409 `OWNER_CANNOT_LEAVE`, 403 (banned)
+  - **부수효과**: join/leave 성공 시 `clubs.memberCount`를 `h_club_members` status='active' 라이브 카운트로 재계산 (같은 트랜잭션). 이 컬럼은 `/api/onboarding/first-club`(FirstClubCard "회원 N명")과 `recommendation.ts:64`(인기도 보너스)가 읽으므로 정확히 유지해야 함. 증분/감분 대신 매번 truth에서 재계산 → 누적 drift 없음.
+  - **drift 없음의 범위**: `h_club_members` 앱 쓰기 경로는 이 라우트와 클럽 생성(`clubs/route.ts` owner insert) 두 곳뿐이라 앱 경로상 동기화됨. 단 (a) 향후 계정 삭제 기능이나 Supabase 대시보드 수동 삭제로 FK `onDelete: cascade`가 멤버 행을 지우면 재계산 트리거 없이 stale 가능, (b) 같은 클럽 동시 join/leave는 READ COMMITTED 하에서 한 텀 stale 후 다음 쓰기에 자가 교정. 둘 다 표시용 수치라 영향 낮음 — 계정 삭제 기능 추가 시 이 재계산을 재검토.
   - Task 3의 클라이언트가 이 두 엔드포인트를 호출
 
 - [ ] **Step 1: 라우트 전체 재작성**
@@ -153,7 +165,7 @@ git status --short
 `src/app/api/clubs/[id]/join/route.ts` 전체를 다음으로 교체:
 
 ```typescript
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { db } from "@/db";
 import { clubMembers, clubs } from "@/db/schema";
@@ -167,11 +179,13 @@ import {
 } from "@/lib/api-response";
 import { createClient } from "@/lib/supabase/server";
 
+// 활성 회원 수를 truth에서 재계산해 clubs.memberCount에 반영 (onboarding/recommendation 소비처용)
+const activeMemberCount = (clubId: string) =>
+  sql<number>`(SELECT count(*)::int FROM ${clubMembers}
+    WHERE ${clubMembers.clubId} = ${clubId} AND ${clubMembers.status} = 'active')`;
+
 // POST /api/clubs/[id]/join - 클럽 가입
-export async function POST(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
   const {
@@ -186,10 +200,8 @@ export async function POST(
       .where(eq(clubs.id, id))
       .limit(1);
     if (!club) return notFoundError("클럽을 찾을 수 없습니다");
-    if (club.joinType === "approval") {
-      return errorResponse("APPROVAL_REQUIRED", "승인제 클럽은 아직 준비 중이에요", 409);
-    }
 
+    // 기존 멤버십을 approval 게이트보다 먼저 확인 — 이미 가입된 회원은 멱등 처리
     const [existing] = await db
       .select({ status: clubMembers.status })
       .from(clubMembers)
@@ -199,14 +211,21 @@ export async function POST(
       return forbiddenError("가입할 수 없는 클럽이에요");
     }
     if (existing) {
-      // 이미 가입된 상태 — 멱등 처리
       return successResponse({ joined: true });
     }
 
-    await db
-      .insert(clubMembers)
-      .values({ clubId: id, userId: user.id, role: "member", status: "active" })
-      .onConflictDoNothing();
+    // 신규 가입에만 승인제 게이트 적용
+    if (club.joinType === "approval") {
+      return errorResponse("APPROVAL_REQUIRED", "승인제 클럽은 아직 준비 중이에요", 409);
+    }
+
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(clubMembers)
+        .values({ clubId: id, userId: user.id, role: "member", status: "active" })
+        .onConflictDoNothing();
+      await tx.update(clubs).set({ memberCount: activeMemberCount(id) }).where(eq(clubs.id, id));
+    });
 
     return successResponse({ joined: true }, 201);
   } catch (err) {
@@ -242,9 +261,12 @@ export async function DELETE(
       return errorResponse("OWNER_CANNOT_LEAVE", "모임장은 탈퇴할 수 없어요", 409);
     }
 
-    await db
-      .delete(clubMembers)
-      .where(and(eq(clubMembers.clubId, id), eq(clubMembers.userId, user.id)));
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(clubMembers)
+        .where(and(eq(clubMembers.clubId, id), eq(clubMembers.userId, user.id)));
+      await tx.update(clubs).set({ memberCount: activeMemberCount(id) }).where(eq(clubs.id, id));
+    });
 
     return successResponse({ left: true });
   } catch (err) {
@@ -254,13 +276,15 @@ export async function DELETE(
 }
 ```
 
-- [ ] **Step 2: 타입/린트 검증**
+- [ ] **Step 2: 포맷/타입/린트 검증**
+
+`bun run format`을 먼저 돌려 붙여넣은 코드를 Biome 정규형으로 정렬한 뒤(줄바꿈/줄폭 자동 수정) 검증한다:
 
 ```bash
-bunx tsc --noEmit && bun run lint
+bun run format && bunx tsc --noEmit && bun run lint
 ```
 
-Expected: 둘 다 에러 0.
+Expected: 셋 다 에러 0. (format이 diff를 만들면 그게 정상 — 정규형으로 맞춰진 것)
 
 - [ ] **Step 3: 런타임 검증 — 비인증 401**
 
@@ -272,9 +296,9 @@ Invoke-WebRequest -Method POST -Uri http://localhost:3000/api/clubs/anything/joi
 
 Expected: `401`, body에 `"success":false` + UNAUTHORIZED 계열 코드.
 
-- [ ] **Step 4: 런타임 검증 — 브라우저 스모크 (인증 경로)**
+- [ ] **Step 4: 런타임 검증 — 인증 경로는 Task 3 통합 스모크로 이관**
 
-Task 3 완료 후 통합 스모크에서 함께 검증한다 (버튼 없이는 인증 POST를 만들기 번거로움). 이 시점에서는 401 경로만 확인하고 넘어간다.
+정상 가입/탈퇴 + 라이브 카운트 + owner DELETE 차단(`OWNER_CANNOT_LEAVE`) 검증은 owner/비-owner 계정과 UI가 필요하므로 Task 3 Step 6 통합 스모크에서 함께 수행한다. 이 시점에서는 401 경로만 확인하고 넘어간다.
 
 - [ ] **Step 5: 커밋 (사용자 확인 후)**
 
@@ -296,6 +320,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: Task 2의 `POST/DELETE /api/clubs/[id]/join`. 에러 응답 shape `{ success: false, error: { code, message } }`.
 - Produces: `ClubDetailClient` props에 `myRole: "owner" | "admin" | "member" | null` 추가, `club.memberCount`는 `h_club_members` status='active' 라이브 카운트.
+- **memberCount 이중화 근거**: 상세 페이지는 라이브 카운트를 권위 소스로 직접 계산(쓰기 경로 버그와 무관하게 항상 정확). Task 2가 유지하는 `clubs.memberCount` 저장 컬럼은 목록/온보딩/추천용 비정규화 캐시. 둘은 Task 2 재계산 덕에 항상 일치하므로 표시 불일치 없음.
 
 - [ ] **Step 1: page.tsx — membership에 status 추가 + 라이브 카운트 조회**
 
@@ -436,9 +461,16 @@ Expected: 에러 0. (`useState` unused import가 생기면 안 됨 — `pending`
 2. 새로고침 → 가입 상태 유지 (DB 영속 확인)
 3. 같은 버튼 재클릭 → confirm 후 탈퇴 → "클럽 가입하기"로 복귀, 멤버 수 -1
 4. owner 계정으로 진입 → 버튼 대신 "내가 만든 클럽이에요" 표시
-5. (DB 직접 확인, 선택) Supabase Studio에서 `h_club_members` 행 생성/삭제 확인
+5. **owner DELETE 차단 검증** — owner 계정으로 클럽 상세에 있는 채로, 브라우저 devtools 콘솔에서 세션 쿠키를 그대로 쓰는 fetch로 탈퇴를 직접 호출 (UI엔 버튼이 없어 이 경로로만 도달 가능):
+   ```js
+   fetch(`/api/clubs/<CLUB_ID>/join`, { method: "DELETE" })
+     .then((r) => r.json().then((j) => console.log(r.status, j)));
+   ```
+   Expected: `409` + `error.code === "OWNER_CANNOT_LEAVE"`.
+6. **저장 컬럼 동기화 검증** — 1~3 수행 중 Supabase Studio에서 `h_clubs.member_count`가 `h_club_members` 활성 행 수와 일치하는지 확인 (Task 2 재계산 동작). 온보딩 FirstClubCard "회원 N명"도 같은 값이어야 함.
+7. (DB 직접 확인, 선택) Supabase Studio에서 `h_club_members` 행 생성/삭제 확인
 
-Expected: 5개 전부 통과. 실패 시 원인 수정 후 재검증.
+Expected: 7개 전부 통과. 실패 시 원인 수정 후 재검증.
 
 - [ ] **Step 7: 커밋 (사용자 확인 후)**
 
@@ -458,14 +490,15 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: 기존 `RsvpSchema` (guestName/guestPhone/status), `meetingRsvps` 스키마
-- Produces: 같은 모임 + 같은 전화번호(하이픈 무시 비교) 재응답 시 새 행 대신 기존 행 UPDATE. 응답 200 `{ id, guestName, status, updated: true }`. 전화번호 미입력 응답은 기존과 동일하게 INSERT (dedup 불가). 신규 INSERT 응답은 기존 201 유지.
+- Produces: 같은 모임 + 같은 전화번호(하이픈 무시) + **같은 이름**의 재응답 시에만 새 행 대신 기존 행 UPDATE. 응답 200 `{ id, guestName, status, updated: true }`. 전화번호 미입력, 또는 같은 번호라도 이름이 다르면 기존과 동일하게 새 행 INSERT (201).
+- **dedup 키에 이름을 포함하는 이유**: 이 엔드포인트는 비인증 공개라 (a) 전화번호만으로 매칭하면 제3자가 남의 응답을 덮어쓸 수 있고(스푸핑), (b) 55-70대 타깃에선 부부/가족이 한 번호로 각자 응답하는 경우가 흔해 이름이 다른데 같은 행으로 병합되면 실제 2명이 1명으로 카운트된다. 이름까지 일치할 때만 "동일인의 마음 바꾸기"로 간주해 UPDATE한다.
 
 - [ ] **Step 1: dedup 로직 삽입**
 
 `src/app/api/share/meetings/[id]/rsvp/route.ts`에서 `RSVP_CAP` 체크 블록(47-53행)의 **앞**, meeting past 체크 직후에 다음 블록을 삽입:
 
 ```typescript
-    // 같은 전화번호의 기존 응답이 있으면 새 행 대신 업데이트 (중복 정원 채움 방지 + 마음 바꾸기 허용)
+    // 같은 번호 + 같은 이름의 기존 응답이 있으면 새 행 대신 업데이트 (동일인 마음 바꾸기 허용)
     const phoneDigits = parsed.data.guestPhone?.replace(/-/g, "");
     if (phoneDigits) {
       const [existing] = await db
@@ -474,9 +507,11 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
         .where(
           and(
             eq(meetingRsvps.meetingId, id),
+            eq(meetingRsvps.guestName, parsed.data.guestName),
             sql`replace(${meetingRsvps.guestPhone}, '-', '') = ${phoneDigits}`
           )
         )
+        .orderBy(desc(meetingRsvps.createdAt))
         .limit(1);
 
       if (existing) {
@@ -501,47 +536,60 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
         await db
           .update(meetingRsvps)
-          .set({ guestName: parsed.data.guestName, status: parsed.data.status })
+          .set({ status: parsed.data.status })
           .where(eq(meetingRsvps.id, existing.id));
 
-        return successResponse(
-          { id: existing.id, guestName: parsed.data.guestName, status: parsed.data.status, updated: true }
-        );
+        return successResponse({
+          id: existing.id,
+          guestName: parsed.data.guestName,
+          status: parsed.data.status,
+          updated: true,
+        });
       }
     }
 ```
 
-import 라인 수정: `import { eq, sql } from "drizzle-orm";` → `import { and, eq, sql } from "drizzle-orm";`
+(이름이 매칭 키에 들어가므로 `.set`에서 `guestName`은 갱신하지 않는다 — 어차피 동일 값.)
 
-기존 RSVP_CAP → 정원 체크 → INSERT 경로는 그대로 유지 (existing이 없거나 전화번호 미입력일 때만 도달).
+import 라인 수정: `import { eq, sql } from "drizzle-orm";` → `import { and, desc, eq, sql } from "drizzle-orm";`
 
-- [ ] **Step 2: 타입/린트 검증**
+기존 RSVP_CAP → 정원 체크 → INSERT 경로는 그대로 유지 (existing이 없거나 전화번호 미입력, 또는 같은 번호+다른 이름일 때 도달).
+
+- [ ] **Step 2: 포맷/타입/린트 검증**
 
 ```bash
-bunx tsc --noEmit && bun run lint
+bun run format && bunx tsc --noEmit && bun run lint
 ```
 
-Expected: 에러 0.
+Expected: 셋 다 에러 0.
 
 - [ ] **Step 3: 런타임 검증 — 공개 API 직접 호출**
 
 dev 서버에서, 실제 존재하는 미래 모임 ID 하나를 골라 (`h_club_meetings`에서 조회하거나 브라우저에서 초대장 URL 확인):
 
 ```powershell
-$body = @{ guestName = "테스트게스트"; guestPhone = "010-1234-5678"; status = "joined" } | ConvertTo-Json
-Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/share/meetings/<MEETING_ID>/rsvp -ContentType "application/json" -Body $body
-# 1차: 201, updated 없음 (신규 INSERT)
+$b1 = @{ guestName = "테스트게스트"; guestPhone = "010-1234-5678"; status = "joined" } | ConvertTo-Json
+Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/share/meetings/<MEETING_ID>/rsvp -ContentType "application/json" -Body $b1
+# 1차: updated 필드 없음 (신규 INSERT)
 
-$body2 = @{ guestName = "테스트게스트"; guestPhone = "01012345678"; status = "declined" } | ConvertTo-Json
-Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/share/meetings/<MEETING_ID>/rsvp -ContentType "application/json" -Body $body2
-# 2차: 200, updated=true (하이픈 유무 달라도 같은 번호로 매칭 → status 변경)
+$b2 = @{ guestName = "테스트게스트"; guestPhone = "01012345678"; status = "declined" } | ConvertTo-Json
+Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/share/meetings/<MEETING_ID>/rsvp -ContentType "application/json" -Body $b2
+# 2차: updated=true (하이픈 유무 달라도 같은 번호+이름 → 기존 행 status만 변경)
+
+$b3 = @{ guestName = "테스트게스트"; guestPhone = "010-1234-5678"; status = "joined" } | ConvertTo-Json
+Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/share/meetings/<MEETING_ID>/rsvp -ContentType "application/json" -Body $b3
+# 3차 (declined→joined 정원 재확인 분기): updated=true, 정원 여유 있으면 joined 복귀
+
+$b4 = @{ guestName = "다른가족"; guestPhone = "010-1234-5678"; status = "joined" } | ConvertTo-Json
+Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/share/meetings/<MEETING_ID>/rsvp -ContentType "application/json" -Body $b4
+# 4차 (같은 번호 다른 이름 = 가족): updated 필드 없음 (새 행 INSERT — 병합 안 됨)
 ```
 
-Expected: 2차 호출 후 `h_meeting_rsvps`에 해당 번호 행이 **1개**이고 status가 declined. (Supabase Studio 또는 3차 joined 재호출로 확인)
+Expected: 2·3차 후 "테스트게스트" 행은 `h_meeting_rsvps`에 **1개**로 유지되며 status가 joined. 4차 후 같은 번호로 행이 **2개**(테스트게스트 + 다른가족) — 가족 분리 확인. (Supabase Studio로 확인)
 
 - [ ] **Step 4: 검증 데이터 정리**
 
-Supabase Studio에서 테스트로 넣은 `h_meeting_rsvps` 행 삭제 (guestName "테스트게스트").
+Supabase Studio에서 테스트로 넣은 `h_meeting_rsvps` 행 삭제 (guestName "테스트게스트", "다른가족").
 
 - [ ] **Step 5: 커밋 (사용자 확인 후)**
 
@@ -554,33 +602,42 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 5: 최종 검증 + 운영자 수동 체크리스트 (Kakao OAuth)
+### Task 5: 최종 검증 + 에러 분기 검증 + Kakao OAuth 완료 확인
 
 **Files:**
 - 없음 (검증 + 운영자 안내)
 
 **Interfaces:**
-- Consumes: Task 1-4 전체 결과
-- Produces: W1 완료 판정, 운영자(사용자)가 처리할 콘솔 작업 목록
+- Consumes: Task 1-4 전체 결과 (Kakao 체크리스트는 Task 1 Step 8에서 이미 전달됨 — 여기서는 완료 확인만)
+- Produces: W1 완료 판정
 
 - [ ] **Step 1: 전체 fresh 검증**
 
 ```bash
-bunx tsc --noEmit && bun run lint && bun run build
+bun run format && bunx tsc --noEmit && bun run lint && bun run build
 ```
 
-Expected: 셋 다 성공. build 실패 시 원인 수정 후 재실행.
+Expected: 넷 다 성공. build 실패 시 원인 수정 후 재실행.
 
-- [ ] **Step 2: 운영자 수동 체크리스트 전달**
+- [ ] **Step 2: 미검증 에러 분기 확인 (Studio 테스트 데이터)**
 
-아래 목록을 사용자에게 전달하고 각 항목 완료 여부를 확인받는다 (코드 밖 콘솔 작업 — Claude가 대신 못 함):
+UI/정상 흐름으로 도달 불가한 분기를 Supabase Studio에서 임시 데이터로 검증한다:
 
-1. **Supabase 콘솔**: Authentication → Providers → Kakao 활성화, Kakao REST API 키 + Client Secret 입력
-2. **Kakao Developers 콘솔**: 원본 앱 "하모니"(ID 1509591)에 Redirect URI 등록 — Supabase가 표시하는 콜백 URL (`https://<project-ref>.supabase.co/auth/v1/callback`)
-   - 주의: 테스트 앱("하모니-TEST")이 아니라 **원본 앱**에 등록 (키/도메인 등록이 앱별로 분리됨)
-3. **검증**: 프로덕션 `https://harmony-tawny-iota.vercel.app/login`에서 카카오 로그인 버튼 → 실제 로그인 성공 확인
+1. **APPROVAL_REQUIRED** — 아무 클럽의 `h_clubs.join_type`을 임시로 `approval`로 바꾼 뒤, 비회원 계정으로 그 클럽에 devtools 콘솔 fetch POST `/api/clubs/<id>/join` → `409` + `APPROVAL_REQUIRED` 확인. 검증 후 `join_type` 원복.
+2. **approval 클럽 기존 멤버 멱등 200** — 이미 active 멤버인 계정이 있는 클럽의 `join_type`을 임시로 `approval`로 바꾼 뒤, 그 계정으로 devtools 콘솔 fetch POST `/api/clubs/<id>/join` → `409`가 아니라 `200` + `joined:true` 확인 (멤버십 조회가 approval 게이트보다 먼저 실행되는지 검증). 검증 후 `join_type` 원복.
+3. **banned 차단** — `h_club_members`에 테스트 계정을 `status='banned'`로 임시 INSERT한 뒤, 그 계정으로 POST(가입) → `403`, DELETE(탈퇴) → `403` 확인. 검증 후 행 삭제.
+
+(전부 도달 불가 방어/멱등 로직이라 실패해도 사용자 노출 리스크는 낮으나, 커밋된 코드가 최소 1회는 실행되도록 확인)
+
+- [ ] **Step 3: Kakao OAuth 완료 확인**
+
+Task 1 Step 8에서 전달한 체크리스트의 사용자 처리 결과를 확인한다:
+
+1. Supabase Kakao provider 활성화 + REST API 키/Secret 입력 완료 여부
+2. Kakao Developers 원본 앱에 Redirect URI 등록 완료 여부
+3. **검증**: 프로덕션 `https://harmony-tawny-iota.vercel.app/login`에서 카카오 로그인 → 실제 로그인 성공
 4. (Task 1 Step 2가 수동 폴백이었다면) Vercel 대시보드 Git 연결 완료 확인
 
-- [ ] **Step 3: 브랜치 마무리**
+- [ ] **Step 4: 브랜치 마무리**
 
 superpowers:finishing-a-development-branch 스킬로 진행 — main 머지/PR 여부는 사용자 선택. 머지 push가 Task 1에서 복원한 git 자동배포를 처음으로 트리거하므로, push 후 Vercel 대시보드에서 자동 배포 시작을 확인하면 Task 1 Step 2의 최종 검증이 된다.
