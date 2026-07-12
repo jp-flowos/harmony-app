@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
@@ -42,6 +42,56 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!meeting) return notFoundError("초대장을 찾을 수 없어요");
     if (meeting.date < new Date()) {
       return errorResponse("MEETING_PAST", "이미 지난 모임이에요", 409);
+    }
+
+    // 같은 번호 + 같은 이름의 기존 응답이 있으면 새 행 대신 업데이트 (동일인 마음 바꾸기 허용)
+    const phoneDigits = parsed.data.guestPhone?.replace(/-/g, "");
+    if (phoneDigits) {
+      const [existing] = await db
+        .select({ id: meetingRsvps.id, status: meetingRsvps.status })
+        .from(meetingRsvps)
+        .where(
+          and(
+            eq(meetingRsvps.meetingId, id),
+            eq(meetingRsvps.guestName, parsed.data.guestName),
+            sql`replace(${meetingRsvps.guestPhone}, '-', '') = ${phoneDigits}`
+          )
+        )
+        .orderBy(desc(meetingRsvps.createdAt))
+        .limit(1);
+
+      if (existing) {
+        if (parsed.data.status === "joined" && existing.status !== "joined") {
+          const [{ joinedCount }] = await db
+            .select({
+              joinedCount: sql<number>`
+                (SELECT count(*) FROM ${meetingParticipants}
+                  WHERE ${meetingParticipants.meetingId} = ${id}
+                    AND ${meetingParticipants.status} = 'joined')::int
+                + (SELECT count(*) FROM ${meetingRsvps}
+                    WHERE ${meetingRsvps.meetingId} = ${id}
+                      AND ${meetingRsvps.status} = 'joined')::int
+              `,
+            })
+            .from(clubMeetings)
+            .where(eq(clubMeetings.id, id));
+          if (joinedCount >= (meeting.max ?? 20)) {
+            return errorResponse("MEETING_FULL", "모임 정원이 가득 찼어요", 409);
+          }
+        }
+
+        await db
+          .update(meetingRsvps)
+          .set({ status: parsed.data.status })
+          .where(eq(meetingRsvps.id, existing.id));
+
+        return successResponse({
+          id: existing.id,
+          guestName: parsed.data.guestName,
+          status: parsed.data.status,
+          updated: true,
+        });
+      }
     }
 
     const [{ rsvpCount }] = await db
