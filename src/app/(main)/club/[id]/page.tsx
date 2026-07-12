@@ -18,10 +18,17 @@ export default async function ClubDetailPage({ params }: { params: Promise<{ id:
   if (!club) notFound();
 
   const [membership] = await db
-    .select({ role: clubMembers.role })
+    .select({ role: clubMembers.role, status: clubMembers.status })
     .from(clubMembers)
     .where(and(eq(clubMembers.clubId, id), eq(clubMembers.userId, user.id)))
     .limit(1);
+
+  const [{ memberCount }] = await db
+    .select({ memberCount: sql<number>`count(*)::int` })
+    .from(clubMembers)
+    .where(and(eq(clubMembers.clubId, id), eq(clubMembers.status, "active")));
+
+  const myRole = membership?.status === "active" ? (membership.role ?? "member") : null;
 
   const meetingRows = await db
     .select({
@@ -51,7 +58,7 @@ export default async function ClubDetailPage({ params }: { params: Promise<{ id:
         category: club.category,
         region: club.region,
         description: club.description,
-        memberCount: club.memberCount ?? 0,
+        memberCount,
       }}
       meetings={meetingRows.map((m) => ({
         id: m.id,
@@ -61,7 +68,8 @@ export default async function ClubDetailPage({ params }: { params: Promise<{ id:
         joinedCount: m.joinedCount,
         maxParticipants: m.maxParticipants ?? 20,
       }))}
-      canCreateMeeting={membership?.role === "owner" || membership?.role === "admin"}
+      canCreateMeeting={myRole === "owner" || myRole === "admin"}
+      myRole={myRole}
     />
   );
 }

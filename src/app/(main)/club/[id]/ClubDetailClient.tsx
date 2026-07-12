@@ -10,6 +10,7 @@ import {
   Users,
 } from "@phosphor-icons/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -87,12 +88,38 @@ export function ClubDetailClient({
   club,
   meetings,
   canCreateMeeting,
+  myRole,
 }: {
   club: ClubInfo;
   meetings: MeetingItem[];
   canCreateMeeting: boolean;
+  myRole: "owner" | "admin" | "member" | null;
 }) {
-  const [joined, setJoined] = useState(false);
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const joined = myRole !== null;
+
+  async function handleJoinToggle() {
+    if (joined && !window.confirm("클럽에서 탈퇴할까요?")) return;
+    setPending(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/clubs/${club.id}/join`, {
+        method: joined ? "DELETE" : "POST",
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(json?.error?.message ?? "요청에 실패했어요. 다시 시도해주세요");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError("요청에 실패했어요. 다시 시도해주세요");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -106,14 +133,20 @@ export function ClubDetailClient({
           <span className="text-sm text-gray-400">멤버 {club.memberCount}명</span>
         </div>
         <p className="mt-3 text-base text-gray-600">{club.description}</p>
-        <Button
-          className="mt-4 w-full max-w-xs"
-          size="lg"
-          variant={joined ? "outline" : "default"}
-          onClick={() => setJoined(!joined)}
-        >
-          {joined ? "가입됨 ✓" : "클럽 가입하기"}
-        </Button>
+        {myRole === "owner" ? (
+          <p className="mt-4 text-base font-medium text-orange-600">내가 만든 클럽이에요</p>
+        ) : (
+          <Button
+            className="mt-4 w-full max-w-xs"
+            size="lg"
+            variant={joined ? "outline" : "default"}
+            disabled={pending}
+            onClick={handleJoinToggle}
+          >
+            {pending ? "처리 중..." : joined ? "가입됨 ✓ (누르면 탈퇴)" : "클럽 가입하기"}
+          </Button>
+        )}
+        {error && <p className="mt-2 text-base text-red-600">{error}</p>}
       </div>
 
       {/* 지도에서 보기 — Phase 2 cross-link */}
