@@ -7,6 +7,11 @@ const publicPaths = [
   "/register",
   "/onboarding",
   "/api/auth",
+  "/find-id",
+  "/find-password",
+  "/reset-password",
+  "/terms",
+  "/privacy",
   // PWA + offline shell — must be reachable without a session
   "/offline",
   "/manifest.webmanifest",
