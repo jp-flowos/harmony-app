@@ -12,6 +12,24 @@ import { createClient } from "@/lib/supabase/client";
 
 type Phase = "checking" | "invalid" | "form" | "done";
 
+// 재설정 링크로 발급된 세션만 허용 — 일반 로그인 세션이 이 페이지를
+// 현재 비밀번호 확인 없는 변경 수단으로 쓰는 것을 차단 (세션 승격 방지).
+// amr(인증 방법) 클레임의 최근 항목이 토큰 기반 방법(recovery/otp/magiclink)일 때만 통과.
+const RECOVERY_METHODS = new Set(["recovery", "otp", "magiclink"]);
+
+function isRecoverySession(accessToken: string | undefined): boolean {
+  if (!accessToken) return false;
+  try {
+    const payload = JSON.parse(
+      atob(accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+    ) as { amr?: { method: string; timestamp: number }[] };
+    const latest = [...(payload.amr ?? [])].sort((a, b) => b.timestamp - a.timestamp)[0];
+    return latest ? RECOVERY_METHODS.has(latest.method) : false;
+  } catch {
+    return false;
+  }
+}
+
 export default function ResetPasswordPage() {
   const [phase, setPhase] = useState<Phase>("checking");
   const [password, setPassword] = useState("");
@@ -22,8 +40,8 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setPhase(user ? "form" : "invalid");
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setPhase(isRecoverySession(session?.access_token) ? "form" : "invalid");
     });
   }, []);
 
