@@ -94,7 +94,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   - `CONSENT_VERSION = "2026-07-17"` (약관 문서 버전 상수)
   - `normalizePhone(input: string): string` — 숫자만 추출
   - `isValidPhone(normalized: string): boolean` — `/^010\d{7,8}$/`
-  - `formatPhoneInput(input: string): string` — 입력 중 자동 하이픈 (`010-1234-5678`, 10자리는 `010-123-4567`)
+  - `formatPhoneInput(input: string): string` — 입력 중 자동 하이픈, 항상 진행형 3-4-4 (`010-1234-5678`). 최종 자릿수를 입력 중에 판별할 수 없으므로 10자리에서도 3-4-4 유지 (11번째 자리 입력 시 하이픈 점프 방지)
   - `maskEmail(email: string): string` — `ab***@d***.com` (로컬 앞 2자[1자면 1자]+***, 도메인 첫 라벨 첫 글자+***, 첫 점 이후 유지)
 
 - [ ] **Step 1: 실패하는 테스트 작성**
