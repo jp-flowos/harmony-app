@@ -259,12 +259,14 @@ export default function RegisterPage() {
                 <div className="mt-3 space-y-3">
                   <div className="flex items-center gap-3">
                     <Checkbox
+                      id="agree-terms"
                       checked={agreeTerms}
                       onCheckedChange={(v) => setAgreeTerms(v === true)}
                       className={CHECKBOX_BRAND}
-                      aria-label="이용약관 동의 (필수)"
                     />
-                    <span className="flex-1 text-base text-mocha-800">이용약관 동의 (필수)</span>
+                    <label htmlFor="agree-terms" className="flex-1 text-base text-mocha-800">
+                      이용약관 동의 (필수)
+                    </label>
                     <Link
                       href="/terms"
                       className="text-sm font-bold text-coral-700 underline underline-offset-2"
@@ -274,14 +276,14 @@ export default function RegisterPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <Checkbox
+                      id="agree-privacy"
                       checked={agreePrivacy}
                       onCheckedChange={(v) => setAgreePrivacy(v === true)}
                       className={CHECKBOX_BRAND}
-                      aria-label="개인정보 처리방침 동의 (필수)"
                     />
-                    <span className="flex-1 text-base text-mocha-800">
+                    <label htmlFor="agree-privacy" className="flex-1 text-base text-mocha-800">
                       개인정보 처리방침 동의 (필수)
-                    </span>
+                    </label>
                     <Link
                       href="/privacy"
                       className="text-sm font-bold text-coral-700 underline underline-offset-2"

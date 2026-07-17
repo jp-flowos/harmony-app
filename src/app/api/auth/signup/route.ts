@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { profiles, userConsents } from "@/db/schema";
 import { errorResponse, serverError, successResponse, validationError } from "@/lib/api-response";
 import { CONSENT_VERSION, isValidPhone, normalizePhone } from "@/lib/auth-utils";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const SignupSchema = z.object({
@@ -53,19 +54,30 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = data.user.id;
-    await db.transaction(async (tx) => {
-      await tx
-        .insert(profiles)
-        .values({ id: userId, nickname: name, name, phone })
-        .onConflictDoUpdate({
-          target: profiles.id,
-          set: { name, phone, updatedAt: new Date() },
-        });
-      await tx.insert(userConsents).values([
-        { userId, consentType: "terms", version: CONSENT_VERSION },
-        { userId, consentType: "privacy", version: CONSENT_VERSION },
-      ]);
-    });
+    try {
+      await db.transaction(async (tx) => {
+        await tx
+          .insert(profiles)
+          .values({ id: userId, nickname: name, name, phone })
+          .onConflictDoUpdate({
+            target: profiles.id,
+            set: { name, phone, updatedAt: new Date() },
+          });
+        await tx.insert(userConsents).values([
+          { userId, consentType: "terms", version: CONSENT_VERSION },
+          { userId, consentType: "privacy", version: CONSENT_VERSION },
+        ]);
+      });
+    } catch (txErr) {
+      console.error("[auth/signup] profile/consent tx failed, compensating", txErr);
+      try {
+        const admin = createAdminClient();
+        await admin.auth.admin.deleteUser(userId);
+      } catch (delErr) {
+        console.error("[auth/signup] compensation deleteUser failed", delErr);
+      }
+      return serverError();
+    }
 
     // 이메일 확인이 켜진 프로젝트면 session이 없다 — 클라이언트가 안내 문구로 분기
     return successResponse({ needsEmailConfirm: !data.session }, 201);
