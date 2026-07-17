@@ -8,23 +8,29 @@ import {
   unauthorizedError,
   validationError,
 } from "@/lib/api-response";
-import { jsonResponse } from "@/lib/api-utils";
+import { parseClubFilters } from "@/lib/club-filters";
+import { queryClubs } from "@/lib/queries/clubs";
 import { createClient } from "@/lib/supabase/server";
 
-// GET /api/clubs - 클럽 목록
+// GET /api/clubs - 클럽 목록 (검색/필터/정렬, /club 페이지와 동일한 queryClubs 사용)
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
-  const category = searchParams.get("category");
-  const region = searchParams.get("region");
-  const page = Number(searchParams.get("page") ?? "1");
-  const limit = Number(searchParams.get("limit") ?? "20");
-
-  // TODO: DB query with filters
-  return jsonResponse({
-    clubs: [],
-    pagination: { page, limit, total: 0 },
-    filters: { category, region },
-  });
+  const filters = parseClubFilters(request.nextUrl.searchParams);
+  try {
+    let userId: string | undefined;
+    if (filters.scope === "mine") {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return unauthorizedError();
+      userId = user.id;
+    }
+    const result = await queryClubs(filters, userId);
+    return successResponse({ clubs: result });
+  } catch (err) {
+    console.error("[clubs GET]", err);
+    return serverError();
+  }
 }
 
 const CreateClubSchema = z.object({
