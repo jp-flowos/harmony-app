@@ -75,11 +75,7 @@ export default function FindIdPage() {
         )}
 
         {result && (
-          // biome-ignore lint/a11y/useSemanticElements: <output>은 인라인 기본 표시로 카드 레이아웃(padding/text-align)이 깨짐 — 기존 알림 div 패턴 유지
-          <div
-            role="status"
-            className="mb-5 rounded-2xl border border-sage-200 bg-sage-50 p-5 text-center"
-          >
+          <output className="mb-5 block rounded-2xl border border-sage-200 bg-sage-50 p-5 text-center">
             {!result.found ? (
               <p className="text-base leading-relaxed text-mocha-800">
                 입력하신 정보와 일치하는 계정을 찾지 못했어요.
@@ -109,7 +105,7 @@ export default function FindIdPage() {
                 </Link>
               </div>
             )}
-          </div>
+          </output>
         )}
 
         <form className="stagger-children space-y-6" onSubmit={handleSubmit} noValidate>

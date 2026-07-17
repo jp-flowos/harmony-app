@@ -16,6 +16,8 @@ const WINDOW_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
 function clientIp(request: NextRequest): string {
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
   const forwarded = request.headers.get("x-forwarded-for");
   return forwarded?.split(",")[0]?.trim() || "unknown";
 }
@@ -29,6 +31,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const ip = clientIp(request);
+    await db.insert(authAttempts).values({ ip, action: "find_id" });
     const windowStart = new Date(Date.now() - WINDOW_MS);
     const [attempts] = await db
       .select({ value: count() })
@@ -40,10 +43,9 @@ export async function POST(request: NextRequest) {
           gte(authAttempts.createdAt, windowStart)
         )
       );
-    if ((attempts?.value ?? 0) >= MAX_ATTEMPTS) {
+    if ((attempts?.value ?? 0) > MAX_ATTEMPTS) {
       return errorResponse("RATE_LIMITED", "시도가 너무 많아요. 잠시 후 다시 시도해주세요.", 429);
     }
-    await db.insert(authAttempts).values({ ip, action: "find_id" });
 
     const { name, phone } = parsed.data;
     const [profile] = await db
