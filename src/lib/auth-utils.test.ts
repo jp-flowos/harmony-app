@@ -1,0 +1,56 @@
+import { describe, expect, test } from "bun:test";
+import {
+  CONSENT_VERSION,
+  formatPhoneInput,
+  isValidPhone,
+  maskEmail,
+  normalizePhone,
+} from "./auth-utils";
+
+describe("normalizePhone / isValidPhone", () => {
+  test("하이픈/공백 제거", () => {
+    expect(normalizePhone("010-1234-5678")).toBe("01012345678");
+    expect(normalizePhone("010 1234 5678")).toBe("01012345678");
+  });
+  test("유효성: 010 + 7~8자리", () => {
+    expect(isValidPhone("01012345678")).toBe(true);
+    expect(isValidPhone("0101234567")).toBe(true);
+    expect(isValidPhone("01112345678")).toBe(false);
+    expect(isValidPhone("010123456")).toBe(false);
+    expect(isValidPhone("010123456789")).toBe(false);
+  });
+});
+
+describe("formatPhoneInput", () => {
+  test("입력 진행 중 하이픈", () => {
+    expect(formatPhoneInput("010")).toBe("010");
+    expect(formatPhoneInput("0101")).toBe("010-1");
+    expect(formatPhoneInput("0101234")).toBe("010-1234");
+    expect(formatPhoneInput("01012345")).toBe("010-1234-5");
+    expect(formatPhoneInput("01012345678")).toBe("010-1234-5678");
+  });
+  test("이미 하이픈 있어도 재정규화", () => {
+    expect(formatPhoneInput("010-1234-5678")).toBe("010-1234-5678");
+  });
+  test("11자리 초과분 잘림", () => {
+    expect(formatPhoneInput("010123456789")).toBe("010-1234-5678");
+  });
+});
+
+describe("maskEmail", () => {
+  test("기본 마스킹", () => {
+    expect(maskEmail("harmony@gmail.com")).toBe("ha***@g***.com");
+  });
+  test("로컬 1자", () => {
+    expect(maskEmail("a@naver.com")).toBe("a***@n***.com");
+  });
+  test("다중 점 도메인은 첫 라벨만 마스킹", () => {
+    expect(maskEmail("user@mail.co.kr")).toBe("us***@m***.co.kr");
+  });
+});
+
+describe("CONSENT_VERSION", () => {
+  test("문서 버전 고정", () => {
+    expect(CONSENT_VERSION).toBe("2026-07-17");
+  });
+});
