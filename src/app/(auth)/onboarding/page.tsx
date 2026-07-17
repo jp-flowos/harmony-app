@@ -1,35 +1,39 @@
 "use client";
 
-import { WarningCircle } from "@phosphor-icons/react";
+import { ArrowLeft, WarningCircle } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { StepFontScale } from "@/components/onboarding/StepFontScale";
 import { StepHobby } from "@/components/onboarding/StepHobby";
 import { StepNickname } from "@/components/onboarding/StepNickname";
+import { StepPhoto } from "@/components/onboarding/StepPhoto";
 import { StepRegion } from "@/components/onboarding/StepRegion";
 import { useFontScale } from "@/components/providers/FontScaleProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { StepIndicator } from "@/components/ui/step-indicator";
 import { isVoiceGuideEnabled } from "@/lib/voice/speak";
 
-type OnboardingStep = "font" | "nickname" | "region" | "hobby";
+type OnboardingStep = "font" | "nickname" | "region" | "hobby" | "photo";
 
 interface SavedProgress {
   step?: OnboardingStep;
   nickname?: string;
   sido?: string;
   sigungu?: string;
-  hobbyId?: string;
+  hobbyCategory?: string;
+  hobbyIds?: string[];
+  avatarUrl?: string | null;
 }
 
 const STORAGE_KEY = "harmony.onboarding.progress";
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 
 const STEPS: { id: OnboardingStep; label: string }[] = [
-  { id: "font", label: "글자" },
-  { id: "nickname", label: "이름" },
-  { id: "region", label: "지역" },
-  { id: "hobby", label: "취미" },
+  { id: "font", label: "글자 선택" },
+  { id: "nickname", label: "이름 선택" },
+  { id: "region", label: "지역 선택" },
+  { id: "hobby", label: "취미 선택" },
+  { id: "photo", label: "사진 선택" },
 ];
 
 function isOnboardingStep(value: unknown): value is OnboardingStep {
@@ -38,11 +42,9 @@ function isOnboardingStep(value: unknown): value is OnboardingStep {
 
 function readProgress(): SavedProgress | null {
   if (typeof window === "undefined") return null;
-
   try {
     const raw = window.sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-
     const parsed = JSON.parse(raw) as SavedProgress;
     return parsed && typeof parsed === "object" ? parsed : null;
   } catch {
@@ -52,7 +54,6 @@ function readProgress(): SavedProgress | null {
 
 function writeProgress(progress: SavedProgress): void {
   if (typeof window === "undefined") return;
-
   try {
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
   } catch {
@@ -62,7 +63,6 @@ function writeProgress(progress: SavedProgress): void {
 
 function clearProgress(): void {
   if (typeof window === "undefined") return;
-
   try {
     window.sessionStorage.removeItem(STORAGE_KEY);
   } catch {
@@ -77,50 +77,50 @@ export default function OnboardingPage() {
   const [nickname, setNickname] = useState("");
   const [sido, setSido] = useState("");
   const [sigungu, setSigungu] = useState("");
-  const [hobbyId, setHobbyId] = useState("");
+  const [hobbyCategory, setHobbyCategory] = useState("");
+  const [hobbyIds, setHobbyIds] = useState<string[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [restored, setRestored] = useState(false);
 
-  const currentStep = STEPS.findIndex((item) => item.id === step) + 1;
+  const stepIndex = STEPS.findIndex((item) => item.id === step);
 
   useEffect(() => {
     const saved = readProgress();
-
     if (saved) {
       if (isOnboardingStep(saved.step)) setStep(saved.step);
       if (typeof saved.nickname === "string") setNickname(saved.nickname);
       if (typeof saved.sido === "string") setSido(saved.sido);
       if (typeof saved.sigungu === "string") setSigungu(saved.sigungu);
-      if (typeof saved.hobbyId === "string") setHobbyId(saved.hobbyId);
+      if (typeof saved.hobbyCategory === "string") setHobbyCategory(saved.hobbyCategory);
+      if (Array.isArray(saved.hobbyIds)) {
+        setHobbyIds(saved.hobbyIds.filter((id): id is string => typeof id === "string"));
+      }
+      if (typeof saved.avatarUrl === "string") setAvatarUrl(saved.avatarUrl);
     }
-
     setRestored(true);
   }, []);
 
   useEffect(() => {
     if (!restored) return;
-
-    writeProgress({
-      step,
-      nickname,
-      sido,
-      sigungu,
-      hobbyId,
-    });
-  }, [hobbyId, nickname, restored, sido, sigungu, step]);
+    writeProgress({ step, nickname, sido, sigungu, hobbyCategory, hobbyIds, avatarUrl });
+  }, [avatarUrl, hobbyCategory, hobbyIds, nickname, restored, sido, sigungu, step]);
 
   function goToStep(nextStep: OnboardingStep) {
     setError("");
     setStep(nextStep);
   }
 
+  function goBack() {
+    if (stepIndex > 0) goToStep(STEPS[stepIndex - 1].id);
+  }
+
   async function handleComplete() {
-    if (!nickname.trim() || !sido || !hobbyId || loading) return;
+    if (!nickname.trim() || !sido || hobbyIds.length === 0 || loading) return;
 
     setError("");
     setLoading(true);
-
     try {
       const response = await fetch("/api/onboarding/complete", {
         method: "POST",
@@ -131,7 +131,8 @@ export default function OnboardingPage() {
           sigungu: sigungu.trim(),
           fontScale: scale,
           prefersVoiceGuide: isVoiceGuideEnabled(),
-          hobbyId,
+          hobbyIds,
+          avatarUrl: avatarUrl ?? undefined,
         }),
       });
 
@@ -154,18 +155,49 @@ export default function OnboardingPage() {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-6 sm:p-8">
-        <div className="mb-6 flex flex-col gap-4">
-          <div className="flex justify-end">
-            <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/")}>
-              건너뛰기
-            </Button>
+        {/* 시안형 헤더: 뒤로 + 단계명 + 건너뛰기·문의하기 + 얇은 진행 바 */}
+        <div className="mb-6 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            {stepIndex > 0 ? (
+              <button
+                type="button"
+                onClick={goBack}
+                aria-label="이전 단계로"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-mocha-800 transition-colors hover:bg-cream-100 focus:outline-none focus:ring-4 focus:ring-coral-200"
+              >
+                <ArrowLeft size={26} weight="bold" />
+              </button>
+            ) : (
+              <span className="h-11 w-11 shrink-0" aria-hidden="true" />
+            )}
+            <h1 className="min-w-0 truncate text-xl font-extrabold text-mocha-900">
+              {STEPS[stepIndex].label}
+            </h1>
+            <div className="flex shrink-0 items-center">
+              <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/")}>
+                건너뛰기
+              </Button>
+              {SUPPORT_EMAIL && (
+                <a
+                  href={`mailto:${SUPPORT_EMAIL}`}
+                  className="px-2 text-base font-bold text-mocha-500"
+                >
+                  문의하기
+                </a>
+              )}
+            </div>
           </div>
-          <div className="flex justify-center overflow-x-auto pb-1">
-            <StepIndicator
-              steps={STEPS.map(({ label }) => ({ label }))}
-              current={currentStep}
-              ariaLabel="온보딩 진행 단계"
-              className="[&>div>div[aria-hidden='true']]:mx-1 [&>div>div[aria-hidden='true']]:w-4 sm:[&>div>div[aria-hidden='true']]:mx-2 sm:[&>div>div[aria-hidden='true']]:w-12"
+          <div
+            role="progressbar"
+            aria-valuemin={1}
+            aria-valuemax={STEPS.length}
+            aria-valuenow={stepIndex + 1}
+            aria-label={`온보딩 진행률: ${STEPS.length}단계 중 ${stepIndex + 1}단계`}
+            className="h-1.5 w-full overflow-hidden rounded-full bg-cream-100"
+          >
+            <div
+              className="h-full rounded-full bg-coral-500 transition-all duration-300"
+              style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }}
             />
           </div>
         </div>
@@ -185,15 +217,23 @@ export default function OnboardingPage() {
             onSidoChange={setSido}
             onSigunguChange={setSigungu}
             onNext={() => goToStep("hobby")}
-            onBack={() => goToStep("nickname")}
           />
         )}
 
         {step === "hobby" && (
           <StepHobby
-            selectedHobbyId={hobbyId}
-            onChange={setHobbyId}
-            onBack={() => goToStep("region")}
+            category={hobbyCategory}
+            onCategoryChange={setHobbyCategory}
+            hobbyIds={hobbyIds}
+            onChange={setHobbyIds}
+            onNext={() => goToStep("photo")}
+          />
+        )}
+
+        {step === "photo" && (
+          <StepPhoto
+            avatarUrl={avatarUrl}
+            onUploaded={setAvatarUrl}
             onComplete={handleComplete}
             loading={loading}
           />
