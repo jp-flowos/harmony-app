@@ -15,6 +15,7 @@ export function AvatarStack({
     <div className={cn("flex items-center", className)}>
       {avatarUrls.slice(0, 3).map((url, i) => (
         <Avatar
+          // biome-ignore lint/suspicious/noArrayIndexKey: 최대 3개 고정 슬라이스, 재정렬 없음 — index가 안정적
           key={`${i}-${url ?? "none"}`}
           className={cn("h-9 w-9 ring-2 ring-white", i > 0 && "-ml-2.5")}
         >

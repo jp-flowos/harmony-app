@@ -29,7 +29,7 @@ export function ClubCard({ club }: { club: ClubCardData }) {
       <Card className="transition-all hover:border-coral-200 hover:shadow-soft">
         <CardContent className="flex items-center gap-4 p-4">
           {club.coverImage ? (
-            // Supabase Storage 등 원격 이미지 — next/image 도메인 설정 없이 표시하기 위해 img 사용
+            // biome-ignore lint/performance/noImgElement: Supabase Storage 원격 이미지 — next/image remotePatterns 미구성이라 img 사용
             <img
               src={club.coverImage}
               alt=""
