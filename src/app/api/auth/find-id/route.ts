@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { and, count, eq, gte } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
@@ -23,9 +23,10 @@ function clientIp(request: NextRequest): string {
   return forwarded?.split(",")[0]?.trim() || "unknown";
 }
 
-// 대상 차원 rate limit 키 — PII를 테이블에 남기지 않도록 해시만 저장
+// 대상 차원 rate limit 키 — 무키 해시는 저엔트로피 입력에 역산 가능하므로 서버 시크릿 HMAC 사용
 function targetKey(name: string, phone: string): string {
-  return createHash("sha256").update(`${name}:${phone}`).digest("hex").slice(0, 32);
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "harmony-dev-secret";
+  return createHmac("sha256", secret).update(`${name}:${phone}`).digest("hex").slice(0, 32);
 }
 
 // POST /api/auth/find-id — 이름+휴대폰으로 마스킹된 이메일 조회 (스펙 §7.3)
