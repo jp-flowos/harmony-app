@@ -1,12 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
-import {
-  CLUB_TABS,
-  type ClubFilters,
-  type ClubTab,
-  parseClubFilters,
-} from "@/lib/club-filters";
+import { CLUB_TABS, type ClubFilters, type ClubTab, parseClubFilters } from "@/lib/club-filters";
 import { queryClubs } from "@/lib/queries/clubs";
 import { createClient } from "@/lib/supabase/server";
 import { ClubListClient } from "./ClubListClient";
