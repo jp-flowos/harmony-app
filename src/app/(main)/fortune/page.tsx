@@ -1,7 +1,7 @@
 "use client";
 
 import { ChatCircle, ClockCounterClockwise, Sparkle, Star } from "@phosphor-icons/react";
-import { useState } from "react";
+import { use, useState } from "react";
 import { FortuneCard, ScoreStars } from "@/components/fortune/FortuneCard";
 import { ShareBar } from "@/components/share/ShareBar";
 import { Button } from "@/components/ui/button";
@@ -25,8 +25,18 @@ function getLast7Days(): string[] {
   return days;
 }
 
-export default function FortunePage() {
-  const [selectedZodiac, setSelectedZodiac] = useState<ZodiacAnimal>("용");
+function isZodiacAnimal(value: string): value is ZodiacAnimal {
+  return (ZODIAC_ANIMALS as readonly string[]).includes(value);
+}
+
+export default function FortunePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ zodiac?: string }>;
+}) {
+  const { zodiac: zodiacParam } = use(searchParams);
+  const initialZodiac = zodiacParam && isZodiacAnimal(zodiacParam) ? zodiacParam : "용";
+  const [selectedZodiac, setSelectedZodiac] = useState<ZodiacAnimal>(initialZodiac);
   const [activeTab, setActiveTab] = useState("today");
   const [comment, setComment] = useState("");
 

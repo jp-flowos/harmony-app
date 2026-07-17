@@ -230,7 +230,7 @@ export default async function HomePage() {
 
       {/* 오늘의 운세 · 건강 한 줄 (2열) */}
       <section aria-label="오늘의 운세와 건강 한 줄" className="grid grid-cols-2 gap-3">
-        <Link href="/fortune" className="block">
+        <Link href={`/fortune?zodiac=${encodeURIComponent(fortune.zodiac)}`} className="block">
           <Card className="h-full border-sage-200 bg-gradient-to-br from-sage-50 to-cream-100 transition-all hover:shadow-soft">
             <CardContent className="space-y-1.5 p-4">
               <p className="flex items-center gap-1 text-sm font-extrabold text-coral-700">

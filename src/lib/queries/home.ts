@@ -223,7 +223,7 @@ export async function getHealthOneLiner(todayKst: string): Promise<HealthOneLine
     .where(eq(infoContents.category, "health"))
     .orderBy(desc(infoContents.createdAt))
     .limit(1);
-  if (row) return { text: row.summaryBox ?? row.title, href: `/info/${row.id}` };
+  if (row) return { text: row.summaryBox?.trim() || row.title, href: `/info/${row.id}` };
   const dayIndex = Number(todayKst.slice(8, 10)) % HEALTH_TIPS.length;
   return { text: HEALTH_TIPS[dayIndex], href: "/info" };
 }

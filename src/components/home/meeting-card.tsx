@@ -34,12 +34,12 @@ export function MeetingCard({ meeting }: { meeting: PopularMeeting }) {
             <MapPin size={14} weight="duotone" className="shrink-0" />
             <span className="truncate">{meeting.location}</span>
           </p>
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center pt-1">
             <AvatarStack
               avatarUrls={meeting.participantAvatars}
               extraCount={Math.max(0, meeting.joinedCount - meeting.participantAvatars.length)}
             />
-            <span className="shrink-0 text-sm font-bold text-mocha-700">
+            <span className="ml-auto shrink-0 text-sm font-bold text-mocha-700">
               {meeting.joinedCount}/{meeting.maxParticipants}명
             </span>
           </div>
