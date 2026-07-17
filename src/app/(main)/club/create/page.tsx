@@ -16,60 +16,53 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AGE_RANGE_OPTIONS,
+  CLUB_CATEGORIES,
+  DAY_OPTIONS,
+  MEETING_TYPE_OPTIONS,
+} from "@/lib/club-filters";
+import { REGIONS, SIDO_LIST } from "@/lib/regions";
+import { cn } from "@/lib/utils";
 
-const categories = [
-  "등산",
-  "골프",
-  "독서",
-  "요리",
-  "사진",
-  "여행",
-  "음악",
-  "댄스",
-  "낚시",
-  "바둑",
-  "원예",
-  "수영",
-];
-const regions = [
-  "서울",
-  "경기",
-  "인천",
-  "부산",
-  "대구",
-  "대전",
-  "광주",
-  "울산",
-  "세종",
-  "강원",
-  "충북",
-  "충남",
-  "전북",
-  "전남",
-  "경북",
-  "경남",
-  "제주",
-];
 const joinTypes = [
   { value: "open", label: "자유 가입" },
   { value: "approval", label: "승인 후 가입" },
 ];
 
+const NONE_VALUE = "_none";
+
 export default function CreateClubPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
-  const [region, setRegion] = useState("");
+  const [sido, setSido] = useState("");
+  const [sigungu, setSigungu] = useState("");
+  const [activityDays, setActivityDays] = useState<string[]>([]);
+  const [meetingType, setMeetingType] = useState(NONE_VALUE);
+  const [ageRange, setAgeRange] = useState("all");
   const [description, setDescription] = useState("");
   const [joinType, setJoinType] = useState("open");
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const sigunguList = sido ? (REGIONS[sido] ?? []) : [];
+
+  function toggleDay(day: string) {
+    setActivityDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!category || !region) {
+    if (!category || !sido) {
       setError("카테고리와 지역을 선택해주세요");
+      return;
+    }
+    if (sigunguList.length > 0 && !sigungu) {
+      setError("시/군/구를 선택해주세요");
       return;
     }
     setSubmitting(true);
@@ -78,7 +71,17 @@ export default function CreateClubPage() {
       const res = await fetch("/api/clubs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, category, region, description, joinType }),
+        body: JSON.stringify({
+          name,
+          category,
+          description,
+          joinType,
+          sido,
+          sigungu: sigungu || undefined,
+          activityDays,
+          meetingType: meetingType === NONE_VALUE ? undefined : meetingType,
+          ageRange,
+        }),
       });
       const json = await res.json();
       if (!json.success) {
@@ -128,7 +131,7 @@ export default function CreateClubPage() {
                   <SelectValue placeholder="카테고리 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((c) => (
+                  {CLUB_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>
@@ -138,15 +141,95 @@ export default function CreateClubPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>지역</Label>
-              <Select value={region} onValueChange={setRegion}>
+              <Label>활동 지역</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={sido}
+                  onValueChange={(v) => {
+                    setSido(v);
+                    setSigungu("");
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="시/도 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SIDO_LIST.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={sigungu}
+                  onValueChange={setSigungu}
+                  disabled={sigunguList.length === 0}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="시/군/구 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sigunguList.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>활동 요일 (선택)</Label>
+              <div className="flex flex-wrap gap-2">
+                {DAY_OPTIONS.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleDay(day.value)}
+                    aria-pressed={activityDays.includes(day.value)}
+                    className={cn(
+                      "h-11 w-11 rounded-full border text-base font-semibold transition-colors",
+                      activityDays.includes(day.value)
+                        ? "border-coral-500 bg-coral-50 text-coral-700"
+                        : "border-mocha-200 bg-white text-mocha-700"
+                    )}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>모임 유형 (선택)</Label>
+              <Select value={meetingType} onValueChange={setMeetingType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="지역 선택" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {r}
+                  <SelectItem value={NONE_VALUE}>선택 안 함</SelectItem>
+                  {MEETING_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>연령대</Label>
+              <Select value={ageRange} onValueChange={setAgeRange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 연령</SelectItem>
+                  {AGE_RANGE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

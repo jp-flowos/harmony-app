@@ -10,6 +10,7 @@ import {
 } from "@/lib/api-response";
 import { parseClubFilters } from "@/lib/club-filters";
 import { queryClubs } from "@/lib/queries/clubs";
+import { REGIONS } from "@/lib/regions";
 import { createClient } from "@/lib/supabase/server";
 
 // GET /api/clubs - 클럽 목록 (검색/필터/정렬, /club 페이지와 동일한 queryClubs 사용)
@@ -33,13 +34,35 @@ export async function GET(request: NextRequest) {
   }
 }
 
-const CreateClubSchema = z.object({
-  name: z.string().trim().min(2, "클럽 이름은 2자 이상이어야 해요").max(30),
-  category: z.string().trim().min(1, "카테고리를 선택해주세요").max(20),
-  region: z.string().trim().min(1, "지역을 선택해주세요").max(20),
-  description: z.string().trim().min(1, "클럽 소개를 입력해주세요").max(500),
-  joinType: z.enum(["open", "approval"]).default("open"),
-});
+const CreateClubSchema = z
+  .object({
+    name: z.string().trim().min(2, "클럽 이름은 2자 이상이어야 해요").max(30),
+    category: z.string().trim().min(1, "카테고리를 선택해주세요").max(20),
+    description: z.string().trim().min(1, "클럽 소개를 입력해주세요").max(500),
+    sido: z
+      .string()
+      .trim()
+      .min(1, "시/도를 선택해주세요")
+      .max(10)
+      .refine((v) => v in REGIONS, "올바른 시/도가 아니에요"),
+    sigungu: z.string().trim().min(1).max(20).optional(),
+    activityDays: z
+      .array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]))
+      .max(7)
+      .default([]),
+    meetingType: z.enum(["regular", "flash", "social", "study"]).optional(),
+    ageRange: z.enum(["all", "50s", "60s", "70plus"]).default("all"),
+    joinType: z.enum(["open", "approval"]).default("open"),
+  })
+  .superRefine((data, ctx) => {
+    const sigunguList = REGIONS[data.sido] ?? [];
+    if (sigunguList.length > 0 && !data.sigungu) {
+      ctx.addIssue({ code: "custom", message: "시/군/구를 선택해주세요" });
+    }
+    if (data.sigungu && sigunguList.length > 0 && !sigunguList.includes(data.sigungu)) {
+      ctx.addIssue({ code: "custom", message: "올바른 시/군/구가 아니에요" });
+    }
+  });
 
 // POST /api/clubs - 클럽 생성 (생성자가 owner로 등록)
 export async function POST(request: NextRequest) {
@@ -54,6 +77,9 @@ export async function POST(request: NextRequest) {
     return validationError(parsed.error.issues[0]?.message ?? "입력값이 올바르지 않습니다");
   }
 
+  const { sido, sigungu, activityDays, meetingType, ageRange, ...rest } = parsed.data;
+  const region = sigungu ? `${sido} ${sigungu}` : sido;
+
   try {
     const clubId = crypto.randomUUID();
     const created = await db.transaction(async (tx) => {
@@ -61,7 +87,13 @@ export async function POST(request: NextRequest) {
         .insert(clubs)
         .values({
           id: clubId,
-          ...parsed.data,
+          ...rest,
+          region,
+          sido,
+          sigungu: sigungu ?? null,
+          activityDays,
+          meetingType: meetingType ?? null,
+          ageRange,
           ownerId: user.id,
           memberCount: 1,
         })
