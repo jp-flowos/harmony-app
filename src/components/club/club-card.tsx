@@ -29,7 +29,8 @@ export function ClubCard({ club }: { club: ClubCardData }) {
       <Card className="transition-all hover:border-coral-200 hover:shadow-soft">
         <CardContent className="flex items-center gap-4 p-4">
           {club.coverImage ? (
-            // biome-ignore lint/performance/noImgElement: Supabase Storage 원격 이미지 — next/image remotePatterns 미구성이라 img 사용
+            // coverImage는 자유 텍스트 URL(임의 외부 호스트 가능) — next/image는 미등록 호스트에서 런타임 오류라 img 사용
+            // biome-ignore lint/performance/noImgElement: coverImage가 remotePatterns에 보장되지 않는 임의 URL일 수 있음
             <img
               src={club.coverImage}
               alt=""
