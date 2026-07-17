@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name, phone, nickname: name } },
+      options: {
+        data: { name, phone, nickname: name },
+        emailRedirectTo: `${request.nextUrl.origin}/api/auth/callback?next=/onboarding`,
+      },
     });
 
     if (error) {
@@ -51,6 +54,13 @@ export async function POST(request: NextRequest) {
     }
     if (!data.user) {
       return errorResponse("SIGNUP_FAILED", "가입에 실패했어요. 잠시 후 다시 시도해주세요.", 400);
+    }
+
+    // 이메일 확인 ON 구성: 기존 확인된 이메일로 재가입하면 Supabase가 열거 방지용
+    // 가짜 유저(identities 빈 배열)를 error 없이 반환한다 — DB에 유령 스텁/동의를 만들지 않고
+    // 동일한 응답만 반환해 열거 방지를 유지한다.
+    if (data.user.identities?.length === 0) {
+      return successResponse({ needsEmailConfirm: true }, 201);
     }
 
     const userId = data.user.id;
@@ -69,7 +79,10 @@ export async function POST(request: NextRequest) {
         ]);
       });
     } catch (txErr) {
-      console.error("[auth/signup] profile/consent tx failed, compensating", txErr);
+      console.error(
+        "[auth/signup] profile/consent tx failed, compensating:",
+        txErr instanceof Error ? txErr.message : String(txErr)
+      );
       try {
         const admin = createAdminClient();
         await admin.auth.admin.deleteUser(userId);

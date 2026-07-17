@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Greeting } from "@/components/ui/greeting";
 import { createClient } from "@/lib/supabase/client";
+import { KEEP_SIGNIN_COOKIE } from "@/lib/supabase/cookie-policy";
 
 export default function LoginPage() {
   const [error, setError] = useState("");
@@ -17,6 +18,9 @@ export default function LoginPage() {
     setError("");
     setKakaoLoading(true);
     try {
+      // 카카오 플로우엔 유지 선택 UI가 없으므로 항상 유지로 기록 (이메일 플로우의 "0" 잔존이 카카오 세션을 세션화하는 것 방지)
+      // biome-ignore lint/suspicious/noDocumentCookie: 로그인 전 유지 정책 쿠키를 동기적으로 선기록해야 함
+      document.cookie = `${KEEP_SIGNIN_COOKIE}=1; Max-Age=31536000; Path=/`;
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "kakao",
