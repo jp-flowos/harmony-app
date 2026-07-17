@@ -35,6 +35,9 @@ describe("formatPhoneInput", () => {
   test("11자리 초과분 잘림", () => {
     expect(formatPhoneInput("010123456789")).toBe("010-1234-5678");
   });
+  test("10자리도 진행형 3-4-4 유지 (최종 자릿수 판별 불가)", () => {
+    expect(formatPhoneInput("0101234567")).toBe("010-1234-567");
+  });
 });
 
 describe("maskEmail", () => {
@@ -46,6 +49,12 @@ describe("maskEmail", () => {
   });
   test("다중 점 도메인은 첫 라벨만 마스킹", () => {
     expect(maskEmail("user@mail.co.kr")).toBe("us***@m***.co.kr");
+  });
+  test("@ 없는 입력은 전체 마스킹", () => {
+    expect(maskEmail("notanemail")).toBe("***");
+  });
+  test("점 없는 도메인도 안전", () => {
+    expect(maskEmail("a@localhost")).toBe("a***@l***");
   });
 });
 
