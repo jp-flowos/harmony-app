@@ -38,6 +38,7 @@ export default function EmailLoginPage() {
     setLoading(true);
     try {
       // 로그인 전에 유지 정책 쿠키를 먼저 기록 — 이후 발급되는 auth 쿠키에 적용됨
+      // biome-ignore lint/suspicious/noDocumentCookie: 로그인 전에 유지 정책 쿠키를 동기적으로 선기록해야 함
       document.cookie = `${KEEP_SIGNIN_COOKIE}=${keepSignedIn ? "1" : "0"}; Max-Age=31536000; Path=/`;
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });

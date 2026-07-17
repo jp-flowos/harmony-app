@@ -32,6 +32,7 @@ export function createClient() {
               str += `; SameSite=${typeof opts.sameSite === "string" ? opts.sameSite : "Lax"}`;
             }
             if (opts.secure) str += "; Secure";
+            // biome-ignore lint/suspicious/noDocumentCookie: keep-signin 정책을 적용하려면 커스텀 어댑터의 직접 기록이 필요 (Cookie Store API는 Safari 미지원)
             document.cookie = str;
           }
         },
