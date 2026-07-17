@@ -17,14 +17,26 @@ const CompleteOnboardingSchema = z.object({
     .trim()
     .regex(/^[가-힣a-zA-Z0-9]{2,7}$/, "닉네임 형식이 올바르지 않습니다"),
   sido: z.string().trim().min(1, "지역을 선택해주세요"),
-  sigungu: z.string().trim().max(20).nullable().optional(),
+  sigungu: z.string().trim().max(20, "시/군/구가 올바르지 않아요").nullable().optional(),
   hobbyIds: z
     .array(z.string().trim().min(1))
     .min(1, "취미를 선택해주세요")
     .max(3, "취미는 최대 3개까지 선택할 수 있어요"),
   fontScale: z.enum(["sm", "md", "lg", "xl"]),
   prefersVoiceGuide: z.boolean(),
-  avatarUrl: z.string().url("사진 주소가 올바르지 않아요").max(500).nullable().optional(),
+  avatarUrl: z
+    .string()
+    .url("사진 주소가 올바르지 않아요")
+    .max(500, "사진 주소가 너무 길어요")
+    .refine(
+      (v) =>
+        v.startsWith(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/h-avatars/`
+        ),
+      "사진 주소가 올바르지 않아요"
+    )
+    .nullable()
+    .optional(),
 });
 
 export async function POST(request: NextRequest) {
