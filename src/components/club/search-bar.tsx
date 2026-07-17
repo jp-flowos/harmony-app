@@ -34,6 +34,7 @@ export function SearchBar({
           onChange={(e) => setValue(e.target.value)}
           leadingIcon={<MagnifyingGlass size={26} weight="bold" />}
           enterKeyHint="search"
+          maxLength={50}
         />
       </div>
       {onFilterOpen && (

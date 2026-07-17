@@ -37,11 +37,12 @@ export default async function ClubListPage({
   let effective: ClubFilters = urlFilters;
   if (tab === "popular") effective = { ...effective, sort: "popular" };
   if (tab === "mine") effective = { ...effective, scope: "mine" };
-  if (tab === "nearby" && myRegion.sido) {
+  // URL에 명시적 지역 필터가 있으면 nearby 프리셋은 양보한다 (칩과 결과 괴리 방지)
+  if (tab === "nearby" && myRegion.sido && !urlFilters.sido) {
     effective = { ...effective, sido: myRegion.sido, sigungu: myRegion.sigungu ?? undefined };
   }
 
-  const nearbyUnavailable = tab === "nearby" && !myRegion.sido;
+  const nearbyUnavailable = tab === "nearby" && !myRegion.sido && !urlFilters.sido;
   const clubList = nearbyUnavailable ? [] : await queryClubs(effective, user?.id);
 
   return (
