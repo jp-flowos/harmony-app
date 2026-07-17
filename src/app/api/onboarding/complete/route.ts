@@ -22,8 +22,8 @@ const CompleteOnboardingSchema = z.object({
     .array(z.string().trim().min(1))
     .min(1, "취미를 선택해주세요")
     .max(3, "취미는 최대 3개까지 선택할 수 있어요"),
-  fontScale: z.enum(["sm", "md", "lg", "xl"]),
-  prefersVoiceGuide: z.boolean(),
+  fontScale: z.enum(["sm", "md", "lg", "xl"], "글자 크기 값이 올바르지 않아요"),
+  prefersVoiceGuide: z.boolean({ error: "음성 안내 설정이 올바르지 않아요" }),
   avatarUrl: z
     .string()
     .url("사진 주소가 올바르지 않아요")
