@@ -75,6 +75,15 @@ function firstValue(params: RawParams, key: string): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function csvSource(params: RawParams, key: string): string | undefined {
+  if (params instanceof URLSearchParams) {
+    const all = params.getAll(key);
+    return all.length > 0 ? all.join(",") : undefined;
+  }
+  const value = params[key];
+  return Array.isArray(value) ? value.join(",") : value;
+}
+
 function csv(value: string | undefined): string[] | undefined {
   if (!value) return undefined;
   const items = value
@@ -91,8 +100,8 @@ export function parseClubFilters(params: RawParams): ClubFilters {
     q: firstValue(params, "q") || undefined,
     sido: firstValue(params, "sido") || undefined,
     sigungu: firstValue(params, "sigungu") || undefined,
-    categories: csv(firstValue(params, "categories")),
-    days: csv(firstValue(params, "days")),
+    categories: csv(csvSource(params, "categories")),
+    days: csv(csvSource(params, "days")),
     meetingType: firstValue(params, "meetingType") || undefined,
     ageRange: firstValue(params, "ageRange") || undefined,
     members: firstValue(params, "members") || undefined,

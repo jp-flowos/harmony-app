@@ -30,6 +30,16 @@ describe("parseClubFilters", () => {
       scope: "all",
     });
   });
+
+  test("반복 URL 파라미터 병합", () => {
+    const f = parseClubFilters(new URLSearchParams("categories=등산&categories=골프"));
+    expect(f.categories).toEqual(["등산", "골프"]);
+  });
+
+  test("Record 배열 값 병합", () => {
+    const f = parseClubFilters({ categories: ["등산", "골프"] });
+    expect(f.categories).toEqual(["등산", "골프"]);
+  });
 });
 
 describe("serializeClubFilters", () => {
