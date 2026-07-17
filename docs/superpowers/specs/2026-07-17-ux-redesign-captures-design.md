@@ -60,7 +60,8 @@
 **h_auth_attempts 테이블 신설 (rate limit용):**
 - `id text pk`, `ip text not null`, `action text not null` (`find_id` 등), `created_at timestamp default now()`, 인덱스 `(ip, action, created_at)`
 
-**h_hobbies 카테고리 재편:**
+**h_hobbies 카테고리 재편 (Phase 4 마이그레이션으로 이동):**
+- 온보딩 취미 선택 전용이며 클럽 필터와 무관(클럽 category는 취미 단위 값)하므로 Phase 4에서 수행
 - 기존 4개 카테고리(운동/문화/생활/교육)를 시안 6개 대분류로 재매핑: `운동/스포츠`, `예술/공예`, `요리/맛집`, `음악/악기`, `여행/아웃도어`, `독서/자기계발`
 - hobby id는 불변 (h_user_hobbies 보존), category 값만 update. 재배치 규칙: 기존 세부 취미 명칭 기준 최근접 대분류로 이동 (예: 등산·골프·수영·요가·배드민턴·탁구·걷기→운동/스포츠, 미술·서예·사진→예술/공예, 요리→요리/맛집, 악기연주·음악감상→음악/악기, 여행·낚시·원예→여행/아웃도어, 독서·외국어·컴퓨터·역사탐방→독서/자기계발). 전체 행 매핑표는 구현 플랜에 명시
 
@@ -71,7 +72,7 @@
 
 ### 4.3 공통 컴포넌트 추출 (`src/components/club/`)
 
-- `ClubCard` — 썸네일(coverImage, 없으면 카테고리 이모지 배경 fallback), "인기" 배지(memberCount 20명 이상), 제목, 1줄 설명, 지역·멤버수·카테고리 태그, `AvatarStack`. 홈/클럽 목록의 중복 마크업 대체
+- `ClubCard` — 썸네일(coverImage, 없으면 카테고리 이모지 배경 fallback), "인기" 배지(memberCount 20명 이상), 제목, 1줄 설명, 지역·멤버수·카테고리 태그, `AvatarStack`. 홈/클럽 목록의 중복 마크업 대체 (클럽 목록은 Phase 1, 홈은 Phase 2 섹션 재구성 시 적용)
 - `AvatarStack` — 멤버 아바타 최대 3개 + `+n` 카운트
 - `SearchBar` — 인라인 검색 입력 + 필터 버튼 슬롯 (홈/클럽 공용)
 - 클럽 목록 쿼리: lateral join으로 클럽별 최근 활성 멤버 3명의 `avatarUrl` + 잔여 수 포함
@@ -89,7 +90,7 @@
 
 Radix Dialog 기반 바텀시트. 섹션 순서(시안 그대로, 반경 제외):
 1. 지역 — 시/도, 시/군/구 Select 2개 (행정구역 정적 JSON, 시/도 선택 시 시/군/구 연동)
-2. 카테고리 — 멀티 칩 (전체 + h_hobbies 6개 대분류 + 기타)
+2. 카테고리 — 멀티 칩 (전체 + 클럽 카테고리 프리셋 12종: 등산·골프·독서·요리·사진·여행·음악·댄스·낚시·바둑·원예·수영 + 기타). `h_clubs.category`가 취미 단위 값이므로 시안 칩(등산/골프/… 단위)과 일치
 3. 활동 요일 — 월~일 멀티 칩
 4. 모임 유형 — 전체/정기 모임/번개 모임/친목 위주/스터디·학습
 5. 연령대 — 전체/50대/60대/70대 이상
@@ -101,7 +102,7 @@ Radix Dialog 기반 바텀시트. 섹션 순서(시안 그대로, 반경 제외)
 - `GET /api/clubs` — Zod 쿼리 검증 + `api-response` 패턴 (프로젝트 표준 API 패턴 준수)
 - 파라미터: `q`(이름/설명/카테고리 ilike), `sido`, `sigungu`, `categories`(csv), `days`(csv, `activity_days &&` 배열 overlap), `meetingType`, `ageRange`, `members`(`lte5`/`6-15`/`16-30`/`gte30`), `sort`(`recent` 기본/`popular`), `scope`(`all` 기본/`mine`)
 - 속성 미지정 클럽은 해당 필터 활성 시 제외 (단, `age_range='all'` 클럽은 연령대 필터에 항상 포함)
-- 페이지는 서버 컴포넌트 초기 로드 + React Query로 필터 변경 시 재조회
+- 필터 상태는 URL searchParams로 관리 — "적용하기" 시 router.push로 서버 컴포넌트 재렌더 (공유 가능한 필터 URL, 클라이언트 캐시 불필요). `GET /api/clubs`는 페이지와 동일한 `queryClubs()` 함수를 재사용
 
 ### 5.4 클럽 생성/수정 폼 확장
 
