@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -19,12 +20,21 @@ export const meetingParticipantStatusEnum = pgEnum("h_meeting_participant_status
   "joined",
   "cancelled",
 ]);
+export const meetingTypeEnum = pgEnum("h_meeting_type", ["regular", "flash", "social", "study"]);
+export const ageRangeEnum = pgEnum("h_age_range", ["all", "50s", "60s", "70plus"]);
 
 export const clubs = pgTable("h_clubs", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   category: text("category").notNull(), // hobby category
-  region: text("region").notNull(),
+  region: text("region").notNull(), // legacy 표기 ("{sido} {sigungu}"로 동기 기록)
+  sido: text("sido"),
+  sigungu: text("sigungu"),
+  lat: text("lat"), // 반경 필터 후속 대비 — v1 미사용
+  lng: text("lng"),
+  activityDays: text("activity_days").array().notNull().default(sql`'{}'::text[]`),
+  meetingType: meetingTypeEnum("meeting_type"),
+  ageRange: ageRangeEnum("age_range").notNull().default("all"),
   description: text("description").notNull(),
   ownerId: text("owner_id").references(() => profiles.id),
   coverImage: text("cover_image"),

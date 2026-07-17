@@ -26,6 +26,8 @@ export const profiles = pgTable(
   {
     id: text("id").primaryKey(), // Supabase auth user id
     nickname: text("nickname").notNull(),
+    name: text("name"),
+    phone: text("phone"),
     birthYear: integer("birth_year"),
     region: text("region"),
     sido: text("sido"),
@@ -93,3 +95,28 @@ export const pushSubscriptions = pgTable("h_push_subscriptions", {
   auth: text("auth").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const userConsents = pgTable(
+  "h_user_consents",
+  {
+    id: text("id").primaryKey().default(sql`gen_random_uuid()::text`),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    consentType: text("consent_type").notNull(),
+    version: text("version").notNull(),
+    agreedAt: timestamp("agreed_at").defaultNow(),
+  },
+  (t) => [index("h_idx_user_consents_user").on(t.userId)]
+);
+
+export const authAttempts = pgTable(
+  "h_auth_attempts",
+  {
+    id: text("id").primaryKey().default(sql`gen_random_uuid()::text`),
+    ip: text("ip").notNull(),
+    action: text("action").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [index("h_idx_auth_attempts_ip_action").on(t.ip, t.action, t.createdAt)]
+);
