@@ -1,18 +1,24 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, MapPin } from "@phosphor-icons/react";
+import { MapPin } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Greeting } from "@/components/ui/greeting";
-import { Input } from "@/components/ui/input";
-import { SIDOS } from "@/lib/region/sido";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { REGIONS, SIDO_LIST } from "@/lib/regions";
 
 interface StepRegionProps {
   sido: string;
   sigungu: string;
-  onSidoChange: (value: string) => void;
-  onSigunguChange: (value: string) => void;
+  onSidoChange: (sido: string) => void;
+  onSigunguChange: (sigungu: string) => void;
   onNext: () => void;
-  onBack: () => void;
 }
 
 export function StepRegion({
@@ -21,60 +27,61 @@ export function StepRegion({
   onSidoChange,
   onSigunguChange,
   onNext,
-  onBack,
 }: StepRegionProps) {
+  const sigunguList = sido ? (REGIONS[sido] ?? []) : [];
+  const canProceed = Boolean(sido) && (sigunguList.length === 0 || Boolean(sigungu));
+
   return (
     <div className="space-y-6">
       <Greeting
         icon={<MapPin size={32} weight="duotone" />}
-        title="어디에 살고 계신가요?"
-        subtitle="가까운 지역의 모임을 추천해드려요"
+        title="활동하시는 지역을 선택해주세요."
+        subtitle="가까운 모임을 추천해드릴게요"
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {SIDOS.map((option) => {
-          const isSelected = sido === option;
-
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onSidoChange(option)}
-              aria-pressed={isSelected}
-              className={`min-h-[56px] rounded-2xl border-2 px-3 text-base font-extrabold transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-coral-200 ${
-                isSelected
-                  ? "border-coral-500 bg-coral-500 text-white shadow-warm"
-                  : "border-mocha-200 bg-white text-mocha-900 hover:border-coral-400 hover:bg-coral-50"
-              }`}
-            >
-              {option}
-            </button>
-          );
-        })}
-      </div>
-
       <div className="space-y-2">
-        <Input
-          value={sigungu}
-          onChange={(event) => onSigunguChange(event.target.value)}
-          placeholder="시·군·구 입력 (선택)"
-          autoComplete="address-level2"
-          leadingIcon={<MapPin size={26} weight="duotone" />}
-          aria-label="시군구 입력"
-        />
-        <p className="px-1 text-base text-mocha-700">예: 강남구, 수원시, 제주시</p>
+        <Label>지역</Label>
+        <div className="flex gap-2">
+          <Select
+            value={sido}
+            onValueChange={(v) => {
+              onSidoChange(v);
+              onSigunguChange("");
+            }}
+          >
+            <SelectTrigger className="flex-1" aria-label="시/도 선택">
+              <SelectValue placeholder="시/도 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              {SIDO_LIST.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={sigungu}
+            onValueChange={onSigunguChange}
+            disabled={sigunguList.length === 0}
+          >
+            <SelectTrigger className="flex-1" aria-label="시/군/구 선택">
+              <SelectValue placeholder="시/군/구 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              {sigunguList.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="flex gap-3">
-        <Button variant="outline" size="lg" className="flex-1" onClick={onBack}>
-          <ArrowLeft size={24} weight="bold" />
-          이전
-        </Button>
-        <Button className="flex-1" size="lg" onClick={onNext} disabled={!sido}>
-          다음
-          <ArrowRight size={24} weight="bold" />
-        </Button>
-      </div>
+      <Button className="w-full" size="lg" onClick={onNext} disabled={!canProceed}>
+        계속
+      </Button>
     </div>
   );
 }

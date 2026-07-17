@@ -8,10 +8,10 @@ import { Greeting } from "@/components/ui/greeting";
 import { isVoiceGuideEnabled, setVoiceGuideEnabled, speak } from "@/lib/voice/speak";
 
 const OPTIONS: { value: FontScale; label: string; sampleClass: string }[] = [
-  { value: "sm", label: "작게", sampleClass: "text-base" },
-  { value: "md", label: "보통", sampleClass: "text-lg" },
-  { value: "lg", label: "큼", sampleClass: "text-xl" },
-  { value: "xl", label: "아주큼", sampleClass: "text-2xl" },
+  { value: "sm", label: "보통 크기", sampleClass: "text-lg" },
+  { value: "md", label: "조금 크게", sampleClass: "text-xl" },
+  { value: "lg", label: "아주 크게", sampleClass: "text-2xl" },
+  { value: "xl", label: "가장 크게", sampleClass: "text-3xl" },
 ];
 
 export function StepFontScale({ onNext }: { onNext: () => void }) {
@@ -35,11 +35,11 @@ export function StepFontScale({ onNext }: { onNext: () => void }) {
     <div className="space-y-6">
       <Greeting
         icon={<SpeakerHigh size={32} weight="duotone" />}
-        title="보기 편한 글자 크기를 골라주세요"
+        title="프로필에 사용할 글씨체를 선택해주세요."
         subtitle="선택하면 바로 글자가 바뀌어요"
       />
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
         {OPTIONS.map((option) => {
           const isActive = scale === option.value;
 
@@ -49,14 +49,14 @@ export function StepFontScale({ onNext }: { onNext: () => void }) {
               type="button"
               onClick={() => setScale(option.value)}
               aria-pressed={isActive}
-              className={`flex min-h-[72px] w-full items-center justify-between rounded-2xl border-2 px-5 py-4 text-left transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-coral-200 ${
+              className={`flex min-h-[104px] w-full flex-col items-start justify-between rounded-2xl border-2 p-4 text-left transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-coral-200 ${
                 isActive
                   ? "border-coral-500 bg-coral-50 shadow-soft"
                   : "border-mocha-200 bg-white hover:border-coral-400 hover:bg-coral-50"
               }`}
             >
-              <span className="text-xl font-extrabold text-mocha-900">{option.label}</span>
-              <span className={`${option.sampleClass} font-bold text-mocha-700`}>가 나 다</span>
+              <span className="text-sm font-bold text-coral-700">{option.label}</span>
+              <span className={`${option.sampleClass} font-bold text-mocha-900`}>안녕하세요</span>
             </button>
           );
         })}
