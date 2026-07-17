@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { and, count, eq, gte } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
@@ -22,6 +23,11 @@ function clientIp(request: NextRequest): string {
   return forwarded?.split(",")[0]?.trim() || "unknown";
 }
 
+// 대상 차원 rate limit 키 — PII를 테이블에 남기지 않도록 해시만 저장
+function targetKey(name: string, phone: string): string {
+  return createHash("sha256").update(`${name}:${phone}`).digest("hex").slice(0, 32);
+}
+
 // POST /api/auth/find-id — 이름+휴대폰으로 마스킹된 이메일 조회 (스펙 §7.3)
 export async function POST(request: NextRequest) {
   const parsed = FindIdSchema.safeParse(await request.json().catch(() => ({})));
@@ -44,6 +50,24 @@ export async function POST(request: NextRequest) {
         )
       );
     if ((attempts?.value ?? 0) > MAX_ATTEMPTS) {
+      return errorResponse("RATE_LIMITED", "시도가 너무 많아요. 잠시 후 다시 시도해주세요.", 429);
+    }
+
+    // 2차 rate limit: 대상(name+phone) 기준 — 분산 IP로 특정인을 열거하는 공격 차단.
+    // ip 컬럼에는 IP가 아니라 대상 해시를 저장한다 (action='find_id_target'으로 구분).
+    const target = targetKey(parsed.data.name, parsed.data.phone);
+    await db.insert(authAttempts).values({ ip: target, action: "find_id_target" });
+    const [targetAttempts] = await db
+      .select({ value: count() })
+      .from(authAttempts)
+      .where(
+        and(
+          eq(authAttempts.ip, target),
+          eq(authAttempts.action, "find_id_target"),
+          gte(authAttempts.createdAt, windowStart)
+        )
+      );
+    if ((targetAttempts?.value ?? 0) > MAX_ATTEMPTS) {
       return errorResponse("RATE_LIMITED", "시도가 너무 많아요. 잠시 후 다시 시도해주세요.", 429);
     }
 
