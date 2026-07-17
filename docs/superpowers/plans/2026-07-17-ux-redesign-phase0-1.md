@@ -64,7 +64,7 @@ ALTER TABLE si_mvp.h_clubs ADD COLUMN activity_days text[] NOT NULL DEFAULT '{}'
 ALTER TABLE si_mvp.h_clubs ADD COLUMN meeting_type si_mvp.h_meeting_type;
 ALTER TABLE si_mvp.h_clubs ADD COLUMN age_range si_mvp.h_age_range NOT NULL DEFAULT 'all';
 CREATE INDEX h_idx_clubs_sido_sigungu ON si_mvp.h_clubs (sido, sigungu);
-CREATE INDEX h_idx_clubs_category ON si_mvp.h_clubs (category);
+-- (category 인덱스는 20260523084811 원본 스키마에 이미 존재 — h_idx_clubs_category)
 
 -- 3) 기존 region 값이 시/도 단독 표기인 클럽은 sido 백필
 UPDATE si_mvp.h_clubs
@@ -801,7 +801,8 @@ export async function queryClubs(filters: ClubFilters, userId?: string): Promise
                row_number() over (partition by cm.club_id order by cm.joined_at desc) as rn
         from si_mvp.h_club_members cm
         join si_mvp.h_profiles p on p.id = cm.user_id
-        where cm.status = 'active' and cm.club_id = any(${ids})
+        where cm.status = 'active'
+          and cm.club_id in (${sql.join(ids.map((id) => sql`${id}`), sql`, `)})
       ) ranked
       where rn <= ${AVATAR_LIMIT}
     `);
