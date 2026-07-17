@@ -120,6 +120,7 @@ export default function CreateClubPage() {
                 placeholder="클럽 이름을 입력해주세요"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                maxLength={30}
                 required
               />
             </div>
@@ -243,6 +244,7 @@ export default function CreateClubPage() {
                 placeholder="클럽을 소개해주세요"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                maxLength={500}
                 required
               />
             </div>

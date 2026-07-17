@@ -36,23 +36,44 @@ export async function GET(request: NextRequest) {
 
 const CreateClubSchema = z
   .object({
-    name: z.string().trim().min(2, "클럽 이름은 2자 이상이어야 해요").max(30),
-    category: z.string().trim().min(1, "카테고리를 선택해주세요").max(20),
-    description: z.string().trim().min(1, "클럽 소개를 입력해주세요").max(500),
+    name: z
+      .string()
+      .trim()
+      .min(2, "클럽 이름은 2자 이상이어야 해요")
+      .max(30, "클럽 이름은 30자 이내로 입력해주세요"),
+    category: z
+      .string()
+      .trim()
+      .min(1, "카테고리를 선택해주세요")
+      .max(20, "카테고리가 올바르지 않아요"),
+    description: z
+      .string()
+      .trim()
+      .min(1, "클럽 소개를 입력해주세요")
+      .max(500, "클럽 소개는 500자 이내로 입력해주세요"),
     sido: z
       .string()
       .trim()
       .min(1, "시/도를 선택해주세요")
-      .max(10)
-      .refine((v) => v in REGIONS, "올바른 시/도가 아니에요"),
-    sigungu: z.string().trim().min(1).max(20).optional(),
+      .max(10, "올바른 시/도가 아니에요")
+      .refine((v) => Object.hasOwn(REGIONS, v), "올바른 시/도가 아니에요"),
+    sigungu: z
+      .string()
+      .trim()
+      .min(1, "시/군/구가 올바르지 않아요")
+      .max(20, "시/군/구가 올바르지 않아요")
+      .optional(),
     activityDays: z
-      .array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]))
-      .max(7)
+      .array(
+        z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"], "활동 요일이 올바르지 않아요")
+      )
+      .max(7, "활동 요일 선택이 올바르지 않아요")
       .default([]),
-    meetingType: z.enum(["regular", "flash", "social", "study"]).optional(),
-    ageRange: z.enum(["all", "50s", "60s", "70plus"]).default("all"),
-    joinType: z.enum(["open", "approval"]).default("open"),
+    meetingType: z
+      .enum(["regular", "flash", "social", "study"], "모임 유형이 올바르지 않아요")
+      .optional(),
+    ageRange: z.enum(["all", "50s", "60s", "70plus"], "연령대가 올바르지 않아요").default("all"),
+    joinType: z.enum(["open", "approval"], "가입 방식이 올바르지 않아요").default("open"),
   })
   .superRefine((data, ctx) => {
     const sigunguList = REGIONS[data.sido] ?? [];
