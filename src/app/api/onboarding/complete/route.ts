@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
@@ -12,12 +12,19 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 const CompleteOnboardingSchema = z.object({
-  nickname: z.string().trim().min(1).max(20),
-  sido: z.string().trim().min(1),
+  nickname: z
+    .string()
+    .trim()
+    .regex(/^[가-힣a-zA-Z0-9]{2,7}$/, "닉네임 형식이 올바르지 않습니다"),
+  sido: z.string().trim().min(1, "지역을 선택해주세요"),
   sigungu: z.string().trim().max(20).nullable().optional(),
-  hobbyId: z.string().trim().min(1),
+  hobbyIds: z
+    .array(z.string().trim().min(1))
+    .min(1, "취미를 선택해주세요")
+    .max(3, "취미는 최대 3개까지 선택할 수 있어요"),
   fontScale: z.enum(["sm", "md", "lg", "xl"]),
   prefersVoiceGuide: z.boolean(),
+  avatarUrl: z.string().url("사진 주소가 올바르지 않아요").max(500).nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -34,17 +41,18 @@ export async function POST(request: NextRequest) {
       return validationError(parsed.error.issues[0]?.message ?? "입력값이 올바르지 않습니다");
     }
 
-    const { nickname, sido, hobbyId, fontScale, prefersVoiceGuide } = parsed.data;
+    const { nickname, sido, hobbyIds, fontScale, prefersVoiceGuide } = parsed.data;
     const sigungu = parsed.data.sigungu || null;
+    const avatarUrl = parsed.data.avatarUrl || null;
     const region = sigungu ? `${sido} ${sigungu}` : sido;
+    const uniqueHobbyIds = [...new Set(hobbyIds)];
 
-    const [existingHobby] = await db
+    const existingHobbies = await db
       .select({ id: hobbies.id })
       .from(hobbies)
-      .where(eq(hobbies.id, hobbyId))
-      .limit(1);
+      .where(inArray(hobbies.id, uniqueHobbyIds));
 
-    if (!existingHobby) {
+    if (existingHobbies.length !== uniqueHobbyIds.length) {
       return validationError("선택한 취미를 찾을 수 없습니다");
     }
 
@@ -56,6 +64,7 @@ export async function POST(request: NextRequest) {
         sigungu,
         fontScale,
         prefersVoiceGuide,
+        ...(avatarUrl ? { avatarUrl } : {}),
       };
 
       await tx
@@ -74,7 +83,10 @@ export async function POST(request: NextRequest) {
 
       await tx.delete(userHobbies).where(eq(userHobbies.userId, user.id));
 
-      await tx.insert(userHobbies).values({ userId: user.id, hobbyId }).onConflictDoNothing();
+      await tx
+        .insert(userHobbies)
+        .values(uniqueHobbyIds.map((hobbyId) => ({ userId: user.id, hobbyId })))
+        .onConflictDoNothing();
 
       await tx
         .insert(verificationBadges)
