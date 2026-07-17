@@ -1,74 +1,27 @@
 "use client";
 
-import {
-  ChatCircle,
-  EnvelopeSimple,
-  Eye,
-  EyeSlash,
-  Hand,
-  Lock,
-  WarningCircle,
-} from "@phosphor-icons/react";
+import { ChatCircle, EnvelopeSimple, Hand, WarningCircle } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Greeting } from "@/components/ui/greeting";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [mode, setMode] = useState<"social" | "email">("social");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [kakaoLoading, setKakaoLoading] = useState(false);
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(
-          error.message === "Invalid login credentials"
-            ? "이메일 또는 비밀번호가 일치하지 않아요"
-            : error.message
-        );
-        return;
-      }
-
-      router.push("/club");
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleKakaoLogin = async () => {
     if (kakaoLoading) return;
     setError("");
     setKakaoLoading(true);
-
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "kakao",
         options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding` },
       });
-
       if (error) {
         console.error("Failed to start Kakao OAuth", error);
         setError("카카오 로그인을 시작하지 못했어요. 잠시 후 다시 시도해주세요.");
@@ -86,10 +39,8 @@ export default function LoginPage() {
       <CardContent className="p-7 sm:p-8">
         <Greeting
           icon={<Hand size={32} weight="duotone" />}
-          title={mode === "social" ? "다시 만나서 반가워요" : "이메일로 로그인"}
-          subtitle={
-            mode === "social" ? "편한 방법으로 시작해보세요" : "가입하신 정보를 입력해주세요"
-          }
+          title="다시 만나서 반가워요"
+          subtitle="편한 방법으로 시작해보세요"
           className="mb-7"
         />
 
@@ -103,91 +54,32 @@ export default function LoginPage() {
           </div>
         )}
 
-        {mode === "social" ? (
-          <div className="stagger-children space-y-3">
-            <Button
-              variant="kakao"
-              className="mb-6 w-full animate-fade-up text-lg font-extrabold"
-              size="lg"
-              type="button"
-              onClick={handleKakaoLogin}
-              disabled={kakaoLoading}
-            >
-              <ChatCircle size={28} weight="fill" />
-              {kakaoLoading ? "카카오로 연결 중..." : "카카오로 로그인하기"}
-            </Button>
+        <div className="stagger-children space-y-3">
+          <Button
+            variant="kakao"
+            className="mb-6 w-full animate-fade-up text-lg font-extrabold"
+            size="lg"
+            type="button"
+            onClick={handleKakaoLogin}
+            disabled={kakaoLoading}
+          >
+            <ChatCircle size={28} weight="fill" />
+            {kakaoLoading ? "카카오로 연결 중..." : "카카오로 로그인하기"}
+          </Button>
 
-            <div className="mb-6 flex items-center gap-3 text-mocha-500" aria-hidden="true">
-              <hr className="flex-1 border-mocha-200" />
-              <span className="text-sm">또는 이메일로</span>
-              <hr className="flex-1 border-mocha-200" />
-            </div>
+          <div className="mb-6 flex items-center gap-3 text-mocha-500" aria-hidden="true">
+            <hr className="flex-1 border-mocha-200" />
+            <span className="text-sm">또는 이메일로</span>
+            <hr className="flex-1 border-mocha-200" />
+          </div>
 
-            <Button
-              variant="outline"
-              className="w-full animate-fade-up"
-              size="lg"
-              onClick={() => setMode("email")}
-            >
+          <Link href="/login/email" className="block">
+            <Button variant="outline" className="w-full animate-fade-up" size="lg" type="button">
               <EnvelopeSimple size={26} weight="duotone" />
               이메일로 로그인
             </Button>
-          </div>
-        ) : (
-          <form className="stagger-children space-y-6" onSubmit={handleEmailLogin} noValidate>
-            <div className="space-y-2 animate-fade-up">
-              <Label htmlFor="email">이메일</Label>
-              <Input
-                id="email"
-                type="email"
-                inputMode="email"
-                placeholder="example@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-                leadingIcon={<EnvelopeSimple size={26} weight="duotone" />}
-              />
-            </div>
-            <div className="space-y-2 animate-fade-up">
-              <Label htmlFor="password">비밀번호</Label>
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="비밀번호를 입력해주세요"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-                leadingIcon={<Lock size={26} weight="duotone" />}
-                trailingAction={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-                    aria-pressed={showPassword}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl text-mocha-700 transition-colors hover:bg-cream-100 active:bg-cream-200 focus:outline-none focus:ring-4 focus:ring-coral-200"
-                  >
-                    {showPassword ? <EyeSlash size={24} /> : <Eye size={24} />}
-                  </button>
-                }
-              />
-            </div>
-            <div className="space-y-3 animate-fade-up pt-1">
-              <Button className="w-full" size="lg" type="submit" disabled={loading}>
-                {loading ? "로그인 중이에요..." : "로그인"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => setMode("social")}
-              >
-                다른 방법으로 로그인
-              </Button>
-            </div>
-          </form>
-        )}
+          </Link>
+        </div>
 
         <div className="mt-7 border-t border-mocha-100 pt-6 text-center">
           <p className="text-lg text-mocha-700">

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import { KEEP_SIGNIN_COOKIE, shouldPersist, stripPersistence } from "@/lib/supabase/cookie-policy";
 
 const publicPaths = [
   "/login",
@@ -49,8 +50,9 @@ export async function proxy(request: NextRequest) {
           request.cookies.set(name, value);
         }
         supabaseResponse = NextResponse.next({ request });
+        const persist = shouldPersist(request.cookies.get(KEEP_SIGNIN_COOKIE)?.value);
         for (const { name, value, options } of cookiesToSet) {
-          supabaseResponse.cookies.set(name, value, options);
+          supabaseResponse.cookies.set(name, value, persist ? options : stripPersistence(options));
         }
       },
     },
