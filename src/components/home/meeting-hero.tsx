@@ -41,11 +41,11 @@ export function MeetingHero({ meetings }: { meetings: HomeMeeting[] }) {
                 <h2 className="truncate text-xl font-extrabold leading-snug text-mocha-900">
                   {m.title}
                 </h2>
-                <p className="flex flex-wrap items-center gap-1.5 text-base font-semibold text-mocha-800">
+                <div className="flex flex-wrap items-center gap-1.5 text-base font-semibold text-mocha-800">
                   <Badge variant="default">{dDayLabel(m.date)}</Badge>
                   <CalendarBlank size={16} weight="duotone" />
                   {formatMeetingDateShort(m.date)}
-                </p>
+                </div>
                 <p className="flex items-center gap-1 text-base font-semibold text-mocha-700">
                   <MapPin size={16} weight="duotone" className="shrink-0" />
                   <span className="truncate">{m.location}</span>
