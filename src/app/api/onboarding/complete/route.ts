@@ -31,7 +31,7 @@ const CompleteOnboardingSchema = z.object({
     .refine(
       (v) =>
         v.startsWith(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/h-avatars/`
+          `${(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "")}/storage/v1/object/public/h-avatars/`
         ),
       "사진 주소가 올바르지 않아요"
     )

@@ -10,6 +10,9 @@ export async function resizeImageToJpeg(file: File, maxSize = 1024, quality = 0.
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("캔버스를 사용할 수 없어요");
+    // 투명 PNG가 JPEG로 변환될 때 검정 배경이 되지 않도록 흰색으로 채움
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, width, height);
     ctx.drawImage(bitmap, 0, 0, width, height);
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, "image/jpeg", quality);
