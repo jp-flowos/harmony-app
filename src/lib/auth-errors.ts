@@ -11,7 +11,8 @@ export type LoginFailureReason =
 
 const MESSAGES: Record<LoginFailureReason, string> = {
   invalid_credentials: "이메일 또는 비밀번호가 일치하지 않아요. 다시 확인해주세요.",
-  oauth_only: "카카오로 가입하신 계정이에요. 아래 '카카오로 로그인하기'를 눌러주세요.",
+  // 이메일 로그인 화면에는 카카오 버튼이 없다 — 위치를 가리키지 말고 이동 수단을 함께 렌더링한다
+  oauth_only: "카카오로 가입하신 계정이에요. 카카오로 로그인해주세요.",
   email_not_confirmed: "이메일 확인이 아직 안 됐어요. 메일함에서 확인 메일을 열어주세요.",
   rate_limited: "로그인 시도가 너무 많아요. 잠시 후 다시 시도해주세요.",
   user_banned: "이용이 정지된 계정이에요. 고객센터로 문의해주세요.",

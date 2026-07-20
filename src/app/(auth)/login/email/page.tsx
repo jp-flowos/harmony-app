@@ -2,6 +2,7 @@
 
 import {
   ArrowLeft,
+  ChatCircle,
   EnvelopeSimple,
   Eye,
   EyeSlash,
@@ -32,6 +33,7 @@ export default function EmailLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [error, setError] = useState("");
+  const [showKakaoWay, setShowKakaoWay] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // 비밀번호가 없는 소셜 전용 계정인지 확인 — 실패한 뒤에만 호출한다.
@@ -52,6 +54,7 @@ export default function EmailLoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setShowKakaoWay(false);
     setLoading(true);
     try {
       // 모바일 키보드 자동완성이 붙이는 공백/대문자로 정상 계정이 실패하지 않도록 정규화
@@ -69,6 +72,7 @@ export default function EmailLoginPage() {
         // 자격증명 불일치는 "카카오로만 가입한 계정"일 수도 있어 한 번 더 확인한다
         if (reason === "invalid_credentials" && (await isKakaoOnlyAccount(normalizedEmail))) {
           setError(loginFailureMessage("oauth_only"));
+          setShowKakaoWay(true);
           return;
         }
         setError(loginFailureMessage(reason));
@@ -108,10 +112,20 @@ export default function EmailLoginPage() {
         {error && (
           <div
             role="alert"
-            className="mb-5 flex items-start gap-3 rounded-2xl border-2 border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] p-4 text-base font-medium text-[var(--color-danger)]"
+            className="mb-5 rounded-2xl border-2 border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] p-4"
           >
-            <WarningCircle size={26} weight="fill" className="mt-0.5 shrink-0" />
-            <span className="pt-0.5">{error}</span>
+            <div className="flex items-start gap-3 text-base font-medium text-[var(--color-danger)]">
+              <WarningCircle size={26} weight="fill" className="mt-0.5 shrink-0" />
+              <span className="pt-0.5">{error}</span>
+            </div>
+            {showKakaoWay && (
+              <Link href="/login" className="mt-4 block">
+                <Button variant="kakao" className="w-full text-lg font-extrabold" size="lg">
+                  <ChatCircle size={26} weight="fill" />
+                  카카오로 로그인하러 가기
+                </Button>
+              </Link>
+            )}
           </div>
         )}
 
