@@ -1,9 +1,11 @@
 import { eq, inArray } from "drizzle-orm";
 import type { NextRequest } from "next/server";
+import postgres from "postgres";
 import { z } from "zod";
 import { db } from "@/db";
 import { hobbies, profiles, userConsents, userHobbies, verificationBadges } from "@/db/schema";
 import {
+  errorResponse,
   serverError,
   successResponse,
   unauthorizedError,
@@ -124,6 +126,18 @@ export async function POST(request: NextRequest) {
 
     return successResponse({ ok: true });
   } catch (err) {
+    // h_profiles.phone에는 별도의 부분 유니크 인덱스(h_idx_profiles_phone_unique)가 있다.
+    // upsert의 onConflictDoUpdate는 profiles.id 충돌만 다루므로, 이미 다른 프로필이
+    // 선점한 번호로 들어오면 이 인덱스 위반(23505)이 conflict 절을 우회해 그대로 던져진다.
+    // 여기서 잡지 않으면 사용자는 재시도해도 매번 같은 500을 보게 되어 진행이 막힌다.
+    if (err instanceof postgres.PostgresError && err.code === "23505") {
+      console.error("[onboarding/complete] phone collision", err.code, err.constraint_name);
+      return errorResponse(
+        "PHONE_ALREADY_LINKED",
+        "이 휴대폰 번호는 이미 다른 계정에 연결되어 있어요. 고객센터로 문의해주세요.",
+        409
+      );
+    }
     console.error("[onboarding/complete] failed", err);
     return serverError();
   }
