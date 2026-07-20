@@ -6,7 +6,7 @@
 
 ### Phase 1: 핵심 기능
 - ✅ UI 컴포넌트 시스템 (Button, Card, Badge, Dialog, Tabs, Avatar 등)
-- ✅ 인증 (로그인/회원가입/온보딩) — Supabase Auth
+- ✅ 인증 (휴대폰 SMS 인증 로그인/온보딩) — Supabase Auth
 - ✅ 클럽 관리 (생성/가입/탈퇴/게시판)
 - ✅ 채팅 (클럽 채팅, 1:1 채팅 요청) — Supabase Realtime
 - ✅ 지도 (주변 시니어 친화 장소)
@@ -103,7 +103,7 @@ psql $DATABASE_URL -f scripts/migrate-phase4.sql
 ```
 src/
 ├── app/
-│   ├── (auth)/          # 인증 (로그인/회원가입/온보딩)
+│   ├── (auth)/          # 인증 (휴대폰 SMS 인증 로그인/온보딩)
 │   ├── (main)/          # 메인 레이아웃
 │   │   ├── chat/        # 채팅
 │   │   ├── club/        # 클럽/모임
