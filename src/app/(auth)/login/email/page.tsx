@@ -17,6 +17,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Greeting } from "@/components/ui/greeting";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { classifyLoginError, loginFailureMessage } from "@/lib/auth-errors";
+import { normalizeEmail } from "@/lib/auth-utils";
 import { createClient } from "@/lib/supabase/client";
 import { KEEP_SIGNIN_COOKIE } from "@/lib/supabase/cookie-policy";
 
@@ -32,26 +34,54 @@ export default function EmailLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 비밀번호가 없는 소셜 전용 계정인지 확인 — 실패한 뒤에만 호출한다.
+  const isKakaoOnlyAccount = async (target: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/auth/login-hint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: target }),
+      });
+      const json = await res.json();
+      return json.success === true && json.data?.provider === "kakao";
+    } catch {
+      return false;
+    }
+  };
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
+      // 모바일 키보드 자동완성이 붙이는 공백/대문자로 정상 계정이 실패하지 않도록 정규화
+      const normalizedEmail = normalizeEmail(email);
       // 로그인 전에 유지 정책 쿠키를 먼저 기록 — 이후 발급되는 auth 쿠키에 적용됨
       // biome-ignore lint/suspicious/noDocumentCookie: 로그인 전에 유지 정책 쿠키를 동기적으로 선기록해야 함
       document.cookie = `${KEEP_SIGNIN_COOKIE}=${keepSignedIn ? "1" : "0"}; Max-Age=31536000; Path=/`;
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
       if (error) {
-        setError(
-          error.message === "Invalid login credentials"
-            ? "이메일 또는 비밀번호가 일치하지 않아요"
-            : error.message
-        );
+        const reason = classifyLoginError(error);
+        // 자격증명 불일치는 "카카오로만 가입한 계정"일 수도 있어 한 번 더 확인한다
+        if (reason === "invalid_credentials" && (await isKakaoOnlyAccount(normalizedEmail))) {
+          setError(loginFailureMessage("oauth_only"));
+          return;
+        }
+        setError(loginFailureMessage(reason));
+        return;
+      }
+      if (!data.session) {
+        setError(loginFailureMessage("unknown"));
         return;
       }
       router.push("/");
       router.refresh();
+    } catch {
+      setError(loginFailureMessage("unknown"));
     } finally {
       setLoading(false);
     }

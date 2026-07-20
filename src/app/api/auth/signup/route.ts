@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { profiles, userConsents } from "@/db/schema";
 import { errorResponse, serverError, successResponse, validationError } from "@/lib/api-response";
-import { CONSENT_VERSION, isValidPhone, normalizePhone } from "@/lib/auth-utils";
+import { CONSENT_VERSION, isValidPhone, normalizeEmail, normalizePhone } from "@/lib/auth-utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,7 +13,10 @@ const SignupSchema = z.object({
     .trim()
     .regex(/^[가-힣]{2,10}$/, "이름은 한글 2~10자로 입력해주세요"),
   phone: z.string().transform(normalizePhone).refine(isValidPhone, "휴대폰 번호가 올바르지 않아요"),
-  email: z.email("이메일 형식이 올바르지 않아요"),
+  email: z
+    .string()
+    .transform(normalizeEmail)
+    .pipe(z.email("이메일 형식이 올바르지 않아요")),
   password: z
     .string()
     .min(8, "비밀번호는 8자 이상이어야 해요")

@@ -4,6 +4,7 @@ import {
   formatPhoneInput,
   isValidPhone,
   maskEmail,
+  normalizeEmail,
   normalizePhone,
 } from "./auth-utils";
 
@@ -37,6 +38,19 @@ describe("formatPhoneInput", () => {
   });
   test("10자리도 진행형 3-4-4 유지 (최종 자릿수 판별 불가)", () => {
     expect(formatPhoneInput("0101234567")).toBe("010-1234-567");
+  });
+});
+
+describe("normalizeEmail", () => {
+  test("앞뒤 공백 제거 — 모바일 키보드가 붙이는 공백으로 로그인이 실패하지 않도록", () => {
+    expect(normalizeEmail(" harmony@gmail.com ")).toBe("harmony@gmail.com");
+    expect(normalizeEmail("harmony@gmail.com\n")).toBe("harmony@gmail.com");
+  });
+  test("소문자 정규화 — GoTrue 저장 형식과 일치", () => {
+    expect(normalizeEmail("Harmony@Gmail.COM")).toBe("harmony@gmail.com");
+  });
+  test("가입과 로그인이 같은 값으로 수렴", () => {
+    expect(normalizeEmail(" Harmony@Gmail.com ")).toBe(normalizeEmail("harmony@gmail.com"));
   });
 });
 

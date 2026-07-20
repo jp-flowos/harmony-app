@@ -7,6 +7,12 @@ export function normalizePhone(input: string): string {
   return input.replace(/\D/g, "");
 }
 
+// GoTrue는 이메일을 소문자로 저장하지만 앞뒤 공백은 정규화하지 않는다 —
+// 모바일 키보드 자동완성이 붙이는 공백 하나로 정상 계정의 로그인이 실패한다.
+export function normalizeEmail(input: string): string {
+  return input.trim().toLowerCase();
+}
+
 export function isValidPhone(normalized: string): boolean {
   return /^010\d{7,8}$/.test(normalized);
 }

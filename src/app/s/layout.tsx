@@ -12,7 +12,7 @@ export default function ShareLayout({ children }: { children: React.ReactNode })
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-mocha-100 bg-white p-4">
         <div className="mx-auto max-w-lg">
           <Link
-            href="/register"
+            href="/login"
             className="flex h-14 w-full items-center justify-center rounded-2xl bg-coral-500 text-xl font-extrabold text-white shadow-warm active:scale-[0.98]"
           >
             하모니 시작하기
