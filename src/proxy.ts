@@ -58,9 +58,25 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+  } catch (err) {
+    // 인증 쿠키가 손상되면(청크 유실 등) 디코딩 단계에서 throw한다.
+    // 그대로 두면 모든 페이지가 500이 되어 로그인 화면조차 못 가므로,
+    // 쿠키를 지우고 로그인으로 보내 사용자가 스스로 회복할 수 있게 한다.
+    console.error("[proxy] getUser threw, clearing auth cookies:", err);
+    if (pathname.startsWith("/api/")) return supabaseResponse;
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    const reset = NextResponse.redirect(url);
+    for (const cookie of request.cookies.getAll()) {
+      if (cookie.name.startsWith("sb-")) reset.cookies.delete(cookie.name);
+    }
+    return reset;
+  }
 
   // 비로그인 사용자는 로그인으로
   if (!user && !pathname.startsWith("/api/")) {
