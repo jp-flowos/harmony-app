@@ -25,6 +25,27 @@ export function formatPhoneInput(input: string): string {
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
 }
 
+// 국내 010 번호 ↔ E.164. auth.users.phone과 h_profiles.phone은 모두 E.164로 저장한다.
+// 형식이 두 개면 조회가 어긋나는 버그가 생긴다.
+export function toE164KR(input: string): string | null {
+  const trimmed = input.trim();
+  const digits = trimmed.startsWith("+82")
+    ? `0${normalizePhone(trimmed).slice(2)}`
+    : normalizePhone(trimmed);
+  if (!isValidPhone(digits)) return null;
+  return `+82${digits.slice(1)}`;
+}
+
+export function formatPhoneDisplay(e164: string): string {
+  if (!e164.startsWith("+82")) return e164;
+  const digits = `0${normalizePhone(e164).slice(2)}`;
+  if (!isValidPhone(digits)) return e164;
+  // 완성된 번호이므로 자릿수를 알 수 있다 — 11자리는 3-4-4, 10자리는 3-3-4.
+  // formatPhoneInput은 입력 중 최종 길이를 알 수 없어 항상 3-4-4를 쓰므로 재사용하지 않는다.
+  const mid = digits.length === 11 ? 4 : 3;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 3 + mid)}-${digits.slice(3 + mid)}`;
+}
+
 // 계정 열거 방지용 마스킹: ab***@d***.com (스펙 §7.1)
 export function maskEmail(email: string): string {
   const at = email.indexOf("@");
