@@ -4,15 +4,20 @@ import type { SmsSender } from "./types";
 
 export type { SmsSender } from "./types";
 
-// SMS_PROVIDER가 설정되지 않았거나 "console"이면 콘솔 출력.
 // 공급자 확정 시 여기에 case를 추가한다.
 export function getSmsSender(): SmsSender {
-  const provider = process.env.SMS_PROVIDER ?? "console";
+  // 기본값을 두지 않는다. 예전엔 미설정 시 console로 떨어졌는데, 그러면 안전장치가
+  // NODE_ENV에 의존하게 된다 — NODE_ENV가 없는 환경에서는 가드가 통째로 무력해지고
+  // 다시 콘솔로 열린다. 명시적으로 설정해야만 동작하게 해 fail-closed로 만든다.
+  const provider = process.env.SMS_PROVIDER;
+  if (!provider) {
+    throw new Error("SMS_PROVIDER is not set. Set it explicitly (use 'console' for local dev).");
+  }
   switch (provider) {
     case "console":
-      // console 어댑터는 실제 발송 없이 OTP를 서버 로그에만 남긴다 — 개발용으로만
-      // 허용한다. 운영 환경에서 SMS_PROVIDER가 설정되지 않은 채 fail-open으로
-      // 여기까지 오면 사용자는 문자를 받지 못하고 인증 코드가 로그로 새어나간다.
+      // 명시적으로 console을 설정했더라도 운영에서는 막는다 (2차 방어선).
+      // 이 어댑터는 문자를 보내지 않고 OTP를 로그에만 남기므로, 운영에 걸리면
+      // 사용자는 문자를 못 받고 인증 코드가 로그로 새어나간다.
       if (process.env.NODE_ENV === "production") {
         throw new Error(
           "SMS_PROVIDER must be set to a real provider in production; " +
