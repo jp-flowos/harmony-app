@@ -534,15 +534,21 @@ git commit -m "feat(db): normalize profile phone to E.164 with unique index"
   - `otpFailureMessage(reason: OtpFailureReason, params?: { retryAfterSec?: number }): string`
   - `classifyOtpError(error: { code?: string; status?: number; message?: string }): OtpFailureReason`
 - 유지: `isAuthRejection` (서버 `requireUser()`가 계속 쓴다)
-- 제거: `LoginFailureReason`, `loginFailureMessage`, `classifyLoginError` (이메일 전용)
+- 유지: `LoginFailureReason`, `loginFailureMessage`, `classifyLoginError` — **이 태스크에서 제거하지 않는다.** 아직 `login/email` 페이지가 쓰고 있어서 지우면 빌드가 깨진다. Task 11이 해당 페이지와 함께 제거한다.
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
-`src/lib/auth-errors.test.ts`를 아래로 **전체 교체**한다. `isAuthRejection` 블록은 그대로 유지된다.
+`src/lib/auth-errors.test.ts`에서 **이메일 관련 블록(`classifyLoginError`, `loginFailureMessage`)은 그대로 두고**, 아래 내용을 추가한다. import 줄에 `classifyOtpError`, `otpFailureMessage`를 더한다.
 
 ```ts
 import { describe, expect, test } from "bun:test";
-import { classifyOtpError, isAuthRejection, otpFailureMessage } from "./auth-errors";
+import {
+  classifyLoginError,
+  classifyOtpError,
+  isAuthRejection,
+  loginFailureMessage,
+  otpFailureMessage,
+} from "./auth-errors";
 
 describe("isAuthRejection", () => {
   test("토큰이 실제로 무효한 응답만 로그인 화면으로 보낸다", () => {
@@ -622,7 +628,7 @@ Expected: FAIL — `classifyOtpError is not a function`
 
 - [ ] **Step 3: 구현**
 
-`src/lib/auth-errors.ts`를 아래로 **전체 교체**한다.
+`src/lib/auth-errors.ts`의 **기존 내용은 그대로 두고** 아래를 파일 상단(기존 `LoginFailureReason` 선언 앞)에 추가한다. 기존 `LoginFailureReason`/`loginFailureMessage`/`classifyLoginError`/`isAuthRejection`은 건드리지 않는다 — Task 11에서 제거한다.
 
 ```ts
 // SMS 인증 실패 사유 → 시니어 사용자용 한국어 안내.
@@ -681,30 +687,23 @@ export function classifyOtpError(error: {
   return "unknown";
 }
 
-// 서버에서 getUser() 실패를 해석할 때 쓴다.
-// true  = 토큰이 실제로 무효/만료 → 로그인 화면으로 보내는 게 맞다
-// false = 네트워크·서버 장애 → 로그아웃으로 처리하면 안 되고 재시도 UI를 보여야 한다
-export function isAuthRejection(error: { status?: number; code?: string } | null): boolean {
-  if (!error) return false;
-  const status = error.status ?? 0;
-  return status === 400 || status === 401 || status === 403;
-}
 ```
 
 - [ ] **Step 4: 테스트 통과 확인**
 
 Run: `bun test src/lib/auth-errors.test.ts`
-Expected: PASS
+Expected: PASS — 기존 이메일 테스트와 새 OTP 테스트가 모두 통과한다.
 
 `classifyOtpError` 순서에 주의한다. `expired`를 `invalid`보다 먼저 검사해야 "Token has expired or is invalid"가 `code_expired`로 분류된다.
 
-- [ ] **Step 5: 커밋**
+- [ ] **Step 5: 타입 확인 후 커밋**
 
-이 시점에는 `loginFailureMessage`를 쓰던 `src/app/(auth)/login/email/page.tsx`가 깨진다. Task 11에서 삭제되므로 여기서는 타입 오류를 확인만 하고 넘어간다.
+이메일 함수를 남겨뒀으므로 이 시점에도 빌드가 깨지지 않는다.
 
 ```bash
+bunx tsc --noEmit
 git add src/lib/auth-errors.ts src/lib/auth-errors.test.ts
-git commit -m "feat(auth): replace email login errors with OTP failure messages"
+git commit -m "feat(auth): add OTP failure message mapping"
 ```
 
 ---
@@ -1739,6 +1738,14 @@ git rm -r src/app/api/auth/signup src/app/api/auth/find-id src/app/api/auth/logi
 
 `src/lib/auth-utils.ts`에서 `normalizeEmail`과 `maskEmail` 함수를 삭제한다. `src/lib/auth-utils.test.ts`에서 두 함수의 `describe` 블록과 import를 삭제한다.
 
+`src/lib/auth-errors.ts`에서 이메일 전용 항목을 삭제한다 (Task 5에서 남겨둔 것들).
+
+- `LoginFailureReason` 타입
+- `loginFailureMessage` 함수와 그 `MESSAGES` 상수
+- `classifyLoginError` 함수
+
+`otpFailureMessage`, `classifyOtpError`, `isAuthRejection`은 남긴다. `src/lib/auth-errors.test.ts`에서도 `classifyLoginError`/`loginFailureMessage` `describe` 블록과 import를 삭제한다.
+
 - [ ] **Step 3: 남은 참조 확인**
 
 ```bash
@@ -1925,6 +1932,10 @@ git commit -m "test: verify phone auth end-to-end on production build"
 - `getSmsSender` — Task 3에서 정의, Task 6에서 사용.
 - `StepConsent` props — Task 10 내부에서 정의·사용.
 
-**알려진 순서 의존성**
+**순서 의존성**
 
-Task 5가 `loginFailureMessage`를 제거하므로 Task 5~10 구간에서는 `bunx tsc --noEmit`이 `src/app/(auth)/login/email/page.tsx` 오류를 낸다. Task 11에서 해당 파일이 삭제되면서 해소된다. Task 11 완료 전까지는 타입 오류가 이 파일에 한정되는지만 확인한다.
+모든 태스크가 독립적으로 검증 가능하도록 구성했다. Task 5는 OTP 함수를 **추가만** 하고 이메일 함수를 남겨두므로, 어느 태스크 종료 시점에도 `bunx tsc --noEmit`과 `bun run build`가 통과한다. 이메일 함수 제거는 그것을 쓰는 페이지가 삭제되는 Task 11에서 함께 이뤄진다.
+
+**Task 0 의존성**
+
+Task 6~12는 Send SMS Hook 가용성에 의존한다. Task 1~5는 아키텍처와 무관하게 필요한 작업(번호 변환, 정책 수치, 발송 인터페이스, DB 형식 통일, 오류 문구)이므로 Task 0 확인 전에도 안전하게 진행할 수 있다.
