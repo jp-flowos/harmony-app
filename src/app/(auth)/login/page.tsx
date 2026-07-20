@@ -2,7 +2,7 @@
 
 import { ArrowLeft, ChatCircle, DeviceMobile, Hand, WarningCircle } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Greeting } from "@/components/ui/greeting";
@@ -22,6 +22,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [kakaoLoading, setKakaoLoading] = useState(false);
+  // 단계 전환/새 요청 시마다 증가한다. 응답 도착 시 이 값이 바뀌어 있으면
+  // 사용자가 이미 다른 화면으로 넘어간 것이므로 응답을 무시한다.
+  const requestSeqRef = useRef(0);
 
   // 인증 전에 유지 정책 쿠키를 기록해 두면 이후 발급되는 auth 쿠키에 적용된다.
   function markKeepSignedIn() {
@@ -31,8 +34,10 @@ export default function LoginPage() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError("");
     setLoading(true);
+    const requestId = ++requestSeqRef.current;
     try {
       markKeepSignedIn();
       const res = await fetch("/api/auth/phone/send", {
@@ -41,6 +46,7 @@ export default function LoginPage() {
         body: JSON.stringify({ phone }),
       });
       const json = await res.json();
+      if (requestSeqRef.current !== requestId) return; // 이미 다른 화면으로 넘어감
       if (!json.success) {
         setError(json.error?.message ?? "잠시 후 다시 시도해주세요.");
         return;
@@ -48,16 +54,21 @@ export default function LoginPage() {
       setCode("");
       setStage("code");
     } catch {
+      if (requestSeqRef.current !== requestId) return;
       setError("잠시 후 다시 시도해주세요.");
     } finally {
-      setLoading(false);
+      if (requestSeqRef.current === requestId) {
+        setLoading(false);
+      }
     }
   };
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError("");
     setLoading(true);
+    const requestId = ++requestSeqRef.current;
     try {
       const res = await fetch("/api/auth/phone/verify", {
         method: "POST",
@@ -65,6 +76,7 @@ export default function LoginPage() {
         body: JSON.stringify({ phone, code }),
       });
       const json = await res.json();
+      if (requestSeqRef.current !== requestId) return; // 이미 다른 화면으로 넘어감
       if (!json.success) {
         setError(json.error?.message ?? "잠시 후 다시 시도해주세요.");
         return;
@@ -72,17 +84,22 @@ export default function LoginPage() {
       router.push(json.data?.isNewUser ? "/onboarding" : "/");
       router.refresh();
     } catch {
+      if (requestSeqRef.current !== requestId) return;
       setError("잠시 후 다시 시도해주세요.");
     } finally {
-      setLoading(false);
+      if (requestSeqRef.current === requestId) {
+        setLoading(false);
+      }
     }
   };
 
-  // 번호를 바꾸면 이전 인증 상태를 버린다.
+  // 번호를 바꾸면 이전 인증 상태를 버리고, 진행 중이던 요청도 무효화한다.
   function backToPhone() {
+    requestSeqRef.current += 1;
     setStage("phone");
     setCode("");
     setError("");
+    setLoading(false);
   }
 
   const handleKakaoLogin = async () => {
@@ -180,7 +197,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={backToPhone}
-              className="inline-flex items-center gap-1 text-base font-semibold text-mocha-700"
+              className="inline-flex min-h-12 items-center gap-1 px-2 text-base font-semibold text-mocha-700"
             >
               <ArrowLeft size={20} />
               번호 다시 입력하기
