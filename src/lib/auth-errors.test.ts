@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { classifyLoginError, isAuthRejection, loginFailureMessage } from "./auth-errors";
+import {
+  classifyLoginError,
+  classifyOtpError,
+  isAuthRejection,
+  loginFailureMessage,
+  otpFailureMessage,
+} from "./auth-errors";
 
 describe("isAuthRejection", () => {
   test("토큰이 실제로 무효한 응답만 로그인 화면으로 보낸다", () => {
@@ -73,5 +79,55 @@ describe("loginFailureMessage", () => {
 
   test("카카오 전용 계정은 카카오 로그인을 안내", () => {
     expect(loginFailureMessage("oauth_only")).toContain("카카오");
+  });
+});
+
+describe("classifyOtpError", () => {
+  test("만료된 인증번호", () => {
+    expect(classifyOtpError({ code: "otp_expired", status: 403 })).toBe("code_expired");
+    expect(classifyOtpError({ message: "Token has expired or is invalid" })).toBe("code_expired");
+  });
+
+  test("인증번호 불일치", () => {
+    expect(classifyOtpError({ code: "otp_disabled" })).toBe("code_mismatch");
+    expect(classifyOtpError({ message: "Invalid token" })).toBe("code_mismatch");
+  });
+
+  test("Supabase 자체 발송 한도", () => {
+    expect(classifyOtpError({ status: 429 })).toBe("send_limit");
+    expect(classifyOtpError({ code: "over_sms_send_rate_limit" })).toBe("send_limit");
+  });
+
+  test("모르는 오류는 unknown", () => {
+    expect(classifyOtpError({ message: "some new upstream failure" })).toBe("unknown");
+    expect(classifyOtpError({})).toBe("unknown");
+  });
+});
+
+describe("otpFailureMessage", () => {
+  test("모든 사유가 한국어 안내를 가진다", () => {
+    const reasons = [
+      "invalid_phone",
+      "send_limit",
+      "resend_wait",
+      "code_mismatch",
+      "code_expired",
+      "fail_limit",
+      "unknown",
+    ] as const;
+    for (const reason of reasons) {
+      const message = otpFailureMessage(reason);
+      expect(message.length).toBeGreaterThan(0);
+      // 영문 원문이 새어나오지 않아야 함
+      expect(message).not.toMatch(/[a-z]{4,}/i);
+    }
+  });
+
+  test("재발송 대기는 남은 초를 문구에 넣는다", () => {
+    expect(otpFailureMessage("resend_wait", { retryAfterSec: 17 })).toContain("17");
+  });
+
+  test("남은 초를 모르면 숫자 없이 안내", () => {
+    expect(otpFailureMessage("resend_wait")).toContain("잠시");
   });
 });
