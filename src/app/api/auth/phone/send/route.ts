@@ -47,6 +47,11 @@ async function countSince(key: string, action: string, since: Date): Promise<num
 // 그 1초 사이에 도착한 모든 동시 요청이 같은 pre-write 상태를 읽어 전부 통과했다
 // (동일 번호 200개 동시 요청 → 200개 전부 sentTodayForPhone=0으로 읽고 200통 발송·과금).
 // insert를 먼저 하면 동시 요청도 서로의 행을 카운트에서 보게 되어 경합이 막힌다.
+//
+// 원칙: "실제로 SMS가 발송된 경우에만 하루 한도를 소모한다." resend_wait/send_limit로
+// 막히거나 signInWithOtp가 실패하면 SMS는 나가지 않았으므로, 방금 넣은 행을 즉시
+// 환불(삭제)한다 — 그래도 카운트 시점에는 행이 DB에 남아 있었으므로 동시 요청끼리
+// 서로를 볼 수 있어 위 경합 방지 효과는 그대로 유지된다.
 export async function POST(request: NextRequest) {
   const parsed = SendSchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
@@ -66,6 +71,10 @@ export async function POST(request: NextRequest) {
     // 재전송 대기시간은 insert보다 먼저 읽는다 — insert 후에 읽으면 방금 넣은
     // 자기 자신의 행을 "직전 발송"으로 착각한다. 30초 대기 창은 경합 창(~1초)보다
     // 훨씬 커서 이 read가 먼저 실행돼도 안전하다.
+    // 다만 이 read 자체는 여전히 레이스가 있다 — 같은 번호로 최초 요청이 동시에
+    // 여러 개 들어오면 전부 lastSentAt=null을 읽어 함께 통과할 수 있다(버스트 발송).
+    // 하지만 이 버스트는 하루 발송 한도(MAX_SENDS_PER_PHONE_PER_DAY)로 상한이 걸려
+    // 있어 과금이 무한히 새는 구멍은 아니다.
     const lastRow = await db
       .select({ createdAt: authAttempts.createdAt })
       .from(authAttempts)
@@ -74,8 +83,10 @@ export async function POST(request: NextRequest) {
       .limit(1);
     const lastSentAt = lastRow[0]?.createdAt ? new Date(lastRow[0].createdAt).getTime() : null;
 
-    // 카운트보다 먼저 insert — 판정이 통과하든 막히든 이 시도는 기록에 남는다.
-    // (막힌 경우 그대로 두는 것도 의도된 fail-closed 동작: 공격자의 시도가 다음 카운트에도 잡힌다.)
+    // 카운트보다 먼저 insert — 동시 요청들이 서로의 행을 카운트에서 보게 하기 위해서다.
+    // 판정이 막히면 아래에서 이 행들을 환불(삭제)한다 — SMS가 나가지 않았으니 한도도
+    // 소모되면 안 된다. insert 자체는 카운트가 끝날 때까지 유지되므로 경합 방지 효과는
+    // 남아 있다: 행이 "얼마나 오래 존재하는지"가 아니라 "카운트 시점에 존재하는지"가 핵심이다.
     const inserted = await db
       .insert(authAttempts)
       .values([
@@ -104,6 +115,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!decision.allowed) {
+      // 막힌 시도는 SMS가 나가지 않았으므로 방금 넣은 두 행을 환불한다.
+      // 그렇지 않으면 30초 대기(resend_wait)에 걸려 반복 탭한 시니어 사용자가
+      // 실제로는 한 통도 더 못 받았는데 하루 한도(send_limit)까지 소모해버린다.
+      // 반드시 이 요청이 넣은 id로만 지운다 — (ip, action)으로 지우면 같은 순간
+      // 들어온 다른 동시 요청의 행까지 함께 지워버린다.
+      await db.delete(authAttempts).where(inArray(authAttempts.id, insertedIds));
+
       const message =
         decision.reason === "resend_wait"
           ? otpFailureMessage("resend_wait", { retryAfterSec: decision.retryAfterSec })
@@ -128,7 +146,12 @@ export async function POST(request: NextRequest) {
       // 반드시 이 요청이 넣은 id로만 지운다.
       await db.delete(authAttempts).where(inArray(authAttempts.id, insertedIds));
 
-      const reason = classifyOtpError(error);
+      // classifyOtpError는 검증 화면(code_mismatch 등)까지 포괄하는 공용 분류기다.
+      // 이 발송 엔드포인트에서는 아직 사용자가 인증번호를 입력하지도 않았으므로
+      // "인증번호가 맞지 않아요" 같은 메시지가 나오면 안 된다 — send_limit만 그대로
+      // 받고 나머지는 전부 unknown으로 묶는다.
+      const classified = classifyOtpError(error);
+      const reason = classified === "send_limit" ? "send_limit" : "unknown";
       const message = otpFailureMessage(reason);
       if (reason === "send_limit") {
         return errorResponse("SEND_LIMIT", message, 429);
