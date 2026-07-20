@@ -643,7 +643,7 @@ export type OtpFailureReason =
   | "fail_limit"
   | "unknown";
 
-const MESSAGES: Record<OtpFailureReason, string> = {
+const OTP_MESSAGES: Record<OtpFailureReason, string> = {
   invalid_phone: "휴대폰 번호를 다시 확인해주세요. 010으로 시작하는 번호만 가능해요.",
   send_limit: "오늘 받을 수 있는 횟수를 모두 사용했어요. 내일 다시 시도해주세요.",
   resend_wait: "잠시 후에 다시 받을 수 있어요.",
@@ -660,7 +660,7 @@ export function otpFailureMessage(
   if (reason === "resend_wait" && typeof params?.retryAfterSec === "number") {
     return `${params.retryAfterSec}초 후에 다시 받을 수 있어요.`;
   }
-  return MESSAGES[reason];
+  return OTP_MESSAGES[reason];
 }
 
 // Supabase AuthError는 code가 없는 응답도 있어 message 폴백을 함께 본다.
