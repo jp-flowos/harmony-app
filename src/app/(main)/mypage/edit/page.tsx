@@ -4,15 +4,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-session";
 import { EditProfileForm } from "./EditProfileForm";
 
 export default async function ProfileEditPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const user = await requireUser();
 
   const [profile] = await db.select().from(profiles).where(eq(profiles.id, user.id)).limit(1);
   if (!profile) redirect("/onboarding");

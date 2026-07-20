@@ -1,5 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { db } from "@/db";
 import {
   clubMeetings,
@@ -9,8 +9,8 @@ import {
   meetingRsvps,
   profiles,
 } from "@/db/schema";
+import { requireUser } from "@/lib/auth-session";
 import { formatMeetingDate } from "@/lib/format-date";
-import { createClient } from "@/lib/supabase/server";
 import { MeetingDetailClient } from "./MeetingDetailClient";
 
 export default async function MeetingDetailPage({
@@ -19,11 +19,7 @@ export default async function MeetingDetailPage({
   params: Promise<{ id: string; mid: string }>;
 }) {
   const { id, mid } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const user = await requireUser();
 
   const [row] = await db
     .select({ meeting: clubMeetings, clubName: clubs.name })

@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-session";
 import { NotificationSettings } from "./NotificationSettings";
 
 // Mock data — to be replaced when respective domains are wired (Phase 3+):
@@ -92,11 +92,7 @@ const MENU_ITEMS = [
 ] as const;
 
 export default async function MyPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const user = await requireUser();
 
   const [profile] = await db.select().from(profiles).where(eq(profiles.id, user.id)).limit(1);
   if (!profile) redirect("/onboarding");
@@ -297,13 +293,16 @@ export default async function MyPage() {
               </Link>
             );
           })}
-          <Link
-            href="/logout"
-            className="flex w-full items-center gap-4 px-6 py-5 text-lg font-semibold text-[var(--color-danger)] transition-colors hover:bg-[var(--color-danger-bg)]"
-          >
-            <SignOut size={26} weight="bold" />
-            <span>로그아웃</span>
-          </Link>
+          {/* Link가 아니라 form POST — Link면 프리페치만으로 세션이 지워진다 */}
+          <form action="/logout" method="post">
+            <button
+              type="submit"
+              className="flex w-full items-center gap-4 px-6 py-5 text-lg font-semibold text-[var(--color-danger)] transition-colors hover:bg-[var(--color-danger-bg)]"
+            >
+              <SignOut size={26} weight="bold" />
+              <span>로그아웃</span>
+            </button>
+          </form>
         </CardContent>
       </Card>
     </div>

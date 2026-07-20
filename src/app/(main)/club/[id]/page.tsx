@@ -1,18 +1,14 @@
 import { and, asc, eq, sql } from "drizzle-orm";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { clubMeetings, clubMembers, clubs, meetingParticipants, meetingRsvps } from "@/db/schema";
+import { requireUser } from "@/lib/auth-session";
 import { formatMeetingDate } from "@/lib/format-date";
-import { createClient } from "@/lib/supabase/server";
 import { ClubDetailClient } from "./ClubDetailClient";
 
 export default async function ClubDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const user = await requireUser();
 
   const [club] = await db.select().from(clubs).where(eq(clubs.id, id)).limit(1);
   if (!club) notFound();
