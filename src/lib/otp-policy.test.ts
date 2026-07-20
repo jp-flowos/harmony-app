@@ -5,6 +5,7 @@ import {
   MAX_SENDS_PER_IP_PER_DAY,
   MAX_SENDS_PER_PHONE_PER_DAY,
   MAX_VERIFY_FAILS,
+  MAX_VERIFY_FAILS_PER_IP_PER_DAY,
   RESEND_WAIT_MS,
 } from "./otp-policy";
 
@@ -57,12 +58,29 @@ describe("decideSend", () => {
 
 describe("decideVerify", () => {
   test("실패 한도 미만이면 허용", () => {
-    expect(decideVerify({ recentFails: 0 })).toEqual({ allowed: true });
-    expect(decideVerify({ recentFails: MAX_VERIFY_FAILS - 1 })).toEqual({ allowed: true });
+    expect(decideVerify({ recentFails: 0, recentFailsForIp: 0 })).toEqual({ allowed: true });
+    expect(decideVerify({ recentFails: MAX_VERIFY_FAILS - 1, recentFailsForIp: 0 })).toEqual({
+      allowed: true,
+    });
   });
 
-  test("실패 한도에 도달하면 차단", () => {
-    expect(decideVerify({ recentFails: MAX_VERIFY_FAILS })).toEqual({
+  test("번호별 실패 한도에 도달하면 차단", () => {
+    expect(decideVerify({ recentFails: MAX_VERIFY_FAILS, recentFailsForIp: 0 })).toEqual({
+      allowed: false,
+      reason: "fail_limit",
+    });
+  });
+
+  test("IP별 실패 한도 미만이면 허용", () => {
+    expect(
+      decideVerify({ recentFails: 0, recentFailsForIp: MAX_VERIFY_FAILS_PER_IP_PER_DAY - 1 })
+    ).toEqual({ allowed: true });
+  });
+
+  test("IP별 실패 한도에 도달하면 차단 — 번호별 한도가 남아 있어도 막는다", () => {
+    expect(
+      decideVerify({ recentFails: 0, recentFailsForIp: MAX_VERIFY_FAILS_PER_IP_PER_DAY })
+    ).toEqual({
       allowed: false,
       reason: "fail_limit",
     });

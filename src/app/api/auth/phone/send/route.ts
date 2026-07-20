@@ -1,4 +1,3 @@
-import { createHmac } from "node:crypto";
 import { and, count, desc, eq, gte, inArray } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
@@ -8,22 +7,10 @@ import { errorResponse, serverError, successResponse, validationError } from "@/
 import { classifyOtpError, otpFailureMessage } from "@/lib/auth-errors";
 import { toE164KR } from "@/lib/auth-utils";
 import { decideSend, POLICY_WINDOW_MS } from "@/lib/otp-policy";
+import { clientIp, phoneKey } from "@/lib/otp-rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 const SendSchema = z.object({ phone: z.string().min(1) });
-
-function clientIp(request: NextRequest): string {
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-  const forwarded = request.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim() || "unknown";
-}
-
-// 번호를 원문으로 저장하지 않는다 — 저엔트로피 입력이라 서버 시크릿 HMAC을 쓴다 (find-id와 동일).
-function phoneKey(e164: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "harmony-dev-secret";
-  return createHmac("sha256", secret).update(`otp:${e164}`).digest("hex").slice(0, 32);
-}
 
 async function countSince(key: string, action: string, since: Date): Promise<number> {
   const [row] = await db
@@ -42,7 +29,7 @@ async function countSince(key: string, action: string, since: Date): Promise<num
 // POST /api/auth/phone/send — 인증번호 발송.
 // 정책은 Supabase 호출 앞단에서 강제한다. Supabase 내장 제한은 번호/IP 차원으로 나뉘지 않는다.
 //
-// 카운터 행은 판정 전에 먼저 insert한다 (find-id와 동일한 insert-then-count 패턴).
+// 카운터 행은 판정 전에 먼저 insert한다 (insert-then-count 패턴).
 // "먼저 카운트 → await signInWithOtp (~1초) → 나중에 insert" 순서였던 예전 코드는
 // 그 1초 사이에 도착한 모든 동시 요청이 같은 pre-write 상태를 읽어 전부 통과했다
 // (동일 번호 200개 동시 요청 → 200개 전부 sentTodayForPhone=0으로 읽고 200통 발송·과금).

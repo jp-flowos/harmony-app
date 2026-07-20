@@ -1,5 +1,4 @@
-import { createHmac } from "node:crypto";
-import { and, count, eq, gte } from "drizzle-orm";
+import { and, count, eq, gte, inArray } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
@@ -8,6 +7,7 @@ import { errorResponse, serverError, successResponse, validationError } from "@/
 import { classifyOtpError, otpFailureMessage } from "@/lib/auth-errors";
 import { toE164KR } from "@/lib/auth-utils";
 import { decideVerify, POLICY_WINDOW_MS } from "@/lib/otp-policy";
+import { clientIp, phoneKey } from "@/lib/otp-rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 // zod의 기본 이슈 메시지(예: "Invalid input: expected string, received undefined")는
@@ -23,11 +23,6 @@ const VerifySchema = z.object({
     .trim()
     .regex(/^\d{6}$/, CODE_FORMAT_MESSAGE),
 });
-
-function phoneKey(e164: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "harmony-dev-secret";
-  return createHmac("sha256", secret).update(`otp:${e164}`).digest("hex").slice(0, 32);
-}
 
 // verifyOtp 실패를 "환불(=예약 행 삭제)"할지 판정한다.
 //
@@ -59,8 +54,13 @@ export function shouldRefundVerifyAttempt(error: { status?: number } | null): bo
 // insert를 먼저 하면 동시 요청들이 서로의 예약 행을 카운트에서 보게 되어 경합 창이
 // (verifyOtp 왕복 전체가 아니라) INSERT 문 사이의 짧은 간격으로 좁아진다.
 //
-// 다만 이 행은 아직 "진짜 오답"인지 모르는 예약(reservation)이다. 원칙은 "인프라 실패로
-// *확인된* 경우에만 환불하고, 그 외에는 전부 행을 남겨 5회 한도를 소모한다"이다 —
+// 카운터는 두 축으로 예약한다 — 번호별(otp_fail_target, MAX_VERIFY_FAILS)과
+// IP별(otp_verify_fail_ip, MAX_VERIFY_FAILS_PER_IP_PER_DAY). 번호별 한도만 있으면 한
+// IP가 이미 발송된 여러 번호를 병렬로 브루트포스해도 번호마다 한도가 따로 소모돼
+// 전체적으로는 무제한이 된다 — IP별 한도가 그 구멍을 막는다.
+//
+// 다만 이 행들은 아직 "진짜 오답"인지 모르는 예약(reservation)이다. 원칙은 "인프라
+// 실패로 *확인된* 경우에만 환불하고, 그 외에는 전부 행을 남겨 한도를 소모한다"이다 —
 // 우리 쪽 fail_limit 게이트에 막힌 경우와 Supabase가 status 429/5xx로 응답한 경우
 // (아래 shouldRefundVerifyAttempt 참고)만 환불한다. classifyOtpError가 문자열을
 // 인식하지 못해 unknown을 반환하는 경우는 "인프라 실패 확인"이 아니므로 환불하지
@@ -82,38 +82,56 @@ export async function POST(request: NextRequest) {
     return validationError(otpFailureMessage("invalid_phone"));
   }
 
+  const ip = clientIp(request);
   const key = phoneKey(e164);
-  let reservedId: string | null = null;
+  let reservedIds: string[] = [];
 
   try {
     const since = new Date(Date.now() - POLICY_WINDOW_MS);
 
-    // 카운트보다 먼저 예약 행을 insert — 동시 요청들이 서로의 행을 카운트에서 보게
-    // 하기 위해서다. 판정에 막히거나 진짜 오답이 아닌 것으로 밝혀지면 아래에서 환불한다.
-    const [reserved] = await db
+    // 카운트보다 먼저 예약 행 두 개(번호별 + IP별)를 insert — 동시 요청들이 서로의
+    // 행을 카운트에서 보게 하기 위해서다. 판정에 막히거나 진짜 오답이 아닌 것으로
+    // 밝혀지면 아래에서 두 행을 함께 환불한다.
+    const inserted = await db
       .insert(authAttempts)
-      .values({ ip: key, action: "otp_fail_target" })
+      .values([
+        { ip: key, action: "otp_fail_target" },
+        { ip, action: "otp_verify_fail_ip" },
+      ])
       .returning({ id: authAttempts.id });
-    reservedId = reserved?.id ?? null;
+    reservedIds = inserted.map((row) => row.id);
 
-    const [failRow] = await db
-      .select({ value: count() })
-      .from(authAttempts)
-      .where(
-        and(
-          eq(authAttempts.ip, key),
-          eq(authAttempts.action, "otp_fail_target"),
-          gte(authAttempts.createdAt, since)
-        )
-      );
-    // 방금 넣은 자기 자신의 예약 행이 카운트에 포함돼 있으므로 1을 뺀다 (send 라우트와 동일 패턴).
+    const [[failRow], [failIpRow]] = await Promise.all([
+      db
+        .select({ value: count() })
+        .from(authAttempts)
+        .where(
+          and(
+            eq(authAttempts.ip, key),
+            eq(authAttempts.action, "otp_fail_target"),
+            gte(authAttempts.createdAt, since)
+          )
+        ),
+      db
+        .select({ value: count() })
+        .from(authAttempts)
+        .where(
+          and(
+            eq(authAttempts.ip, ip),
+            eq(authAttempts.action, "otp_verify_fail_ip"),
+            gte(authAttempts.createdAt, since)
+          )
+        ),
+    ]);
+    // 방금 넣은 자기 자신의 예약 행이 각 카운트에 포함돼 있으므로 1씩 뺀다 (send 라우트와 동일 패턴).
     const recentFails = (failRow?.value ?? 0) - 1;
+    const recentFailsForIp = (failIpRow?.value ?? 0) - 1;
 
-    const gate = decideVerify({ recentFails });
+    const gate = decideVerify({ recentFails, recentFailsForIp });
     if (!gate.allowed) {
-      // 우리 쪽 레이트리밋 판정이지 사용자가 틀린 코드를 넣은 게 아니다 — 환불한다.
-      if (reservedId) {
-        await db.delete(authAttempts).where(eq(authAttempts.id, reservedId));
+      // 우리 쪽 레이트리밋 판정이지 사용자가 틀린 코드를 넣은 게 아니다 — 두 예약 행을 함께 환불한다.
+      if (reservedIds.length > 0) {
+        await db.delete(authAttempts).where(inArray(authAttempts.id, reservedIds));
       }
       return errorResponse("FAIL_LIMIT", otpFailureMessage("fail_limit"), 429);
     }
@@ -125,26 +143,49 @@ export async function POST(request: NextRequest) {
       type: "sms",
     });
 
+    if (error) {
+      // send/route.ts와 동일하게 실패를 반드시 로그로 남긴다 — SMS 공급자 롤아웃 중
+      // 디버깅이 필요한 지점이다. 번호와 코드는 절대 로그에 남기지 않는다.
+      console.error("[auth/phone/verify] verifyOtp failed", error.status, error.message);
+    }
+
     if (error || !data.session || !data.user) {
       const reason = error ? classifyOtpError(error) : "code_mismatch";
       // 환불 여부는 classifyOtpError의 문자열 분류가 아니라 status 기반 판정 함수가
       // 결정한다 — 위 함수 주석 참고. code_mismatch/code_expired/unknown 등 대부분의
       // 사유는 행을 남겨 카운터를 소모하고, status 429/5xx로 확인된 인프라 실패만 환불한다.
-      if (shouldRefundVerifyAttempt(error) && reservedId) {
-        await db.delete(authAttempts).where(eq(authAttempts.id, reservedId));
+      if (shouldRefundVerifyAttempt(error) && reservedIds.length > 0) {
+        await db.delete(authAttempts).where(inArray(authAttempts.id, reservedIds));
       }
 
       if (reason === "send_limit") {
         // 이 라우트는 "코드 입력" 화면이다. send_limit 문구("오늘 받을 수 있는 횟수를
         // 모두 사용했어요...")는 발송(send) 화면 문맥이라 여기서 보여주면 사용자가
         // 지금 하고 있는 행동(코드 입력)과 맞지 않는다 — unknown 메시지로 대체한다.
-        return errorResponse("SEND_LIMIT", otpFailureMessage("unknown"), 429);
+        // 코드도 메시지에 맞춰 UNKNOWN으로 통일한다 — SEND_LIMIT 코드를 그대로 두면
+        // 코드로 분기하는 클라이언트가 "오늘 발송 한도 초과" 문구를 렌더링해, 실제로
+        // 내려주는 "잠시 후 다시 시도해주세요" 메시지와 어긋난다.
+        return errorResponse("UNKNOWN", otpFailureMessage("unknown"), 429);
       }
 
-      return errorResponse(reason.toUpperCase(), otpFailureMessage(reason), 400);
+      // Supabase 인프라 장애(5xx)는 사용자 입력 문제가 아니다. 400(클라이언트 오류)으로
+      // 응답하면 서버 장애가 클라이언트 잘못으로 위장돼 알람이 울리지 않는다 — send
+      // 라우트(SEND_FAILED, 502)와 동일하게 502로 알린다. 다만 진짜 오답/만료로 분류된
+      // 경우는 status 값과 무관하게 항상 400을 유지한다.
+      const isGenuineCodeError = reason === "code_mismatch" || reason === "code_expired";
+      const isInfraFailure =
+        !isGenuineCodeError && typeof error?.status === "number" && error.status >= 500;
+      return errorResponse(
+        reason.toUpperCase(),
+        otpFailureMessage(reason),
+        isInfraFailure ? 502 : 400
+      );
     }
 
-    // 성공 — 이번 예약 행을 포함해 실패 기록을 모두 정리한다.
+    // 성공 — 이번 예약 행을 포함해 번호별 실패 기록을 모두 정리한다.
+    // IP별 카운터(otp_verify_fail_ip)는 일부러 지우지 않는다 — 이 카운터는 "이 IP가
+    // 서로 다른 번호를 얼마나 브루트포스했는지"를 추적하는 값이라, 번호 하나가
+    // 성공했다고 같은 IP에서 다른 번호들에 쌓인 실패 기록까지 초기화하면 안 된다.
     await db
       .delete(authAttempts)
       .where(and(eq(authAttempts.ip, key), eq(authAttempts.action, "otp_fail_target")));
@@ -163,9 +204,9 @@ export async function POST(request: NextRequest) {
     // 예약 행이 남아 있다면(위 로직에 도달하지 못한 인프라 예외) 환불을 시도한다 —
     // 진짜 오답 판정 없이 한도를 소모하면 안 된다. 환불 자체가 실패해도 500 응답은
     // 이미 확정이므로 로그만 남긴다.
-    if (reservedId) {
+    if (reservedIds.length > 0) {
       try {
-        await db.delete(authAttempts).where(eq(authAttempts.id, reservedId));
+        await db.delete(authAttempts).where(inArray(authAttempts.id, reservedIds));
       } catch (cleanupErr) {
         console.error("[auth/phone/verify] cleanup failed", cleanupErr);
       }

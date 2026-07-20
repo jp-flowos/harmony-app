@@ -6,6 +6,12 @@ export const RESEND_WAIT_MS = 30 * 1000;
 export const MAX_VERIFY_FAILS = 5;
 export const MAX_SENDS_PER_PHONE_PER_DAY = 5;
 export const MAX_SENDS_PER_IP_PER_DAY = 20;
+// verify는 번호당 실패 횟수만 세므로, 같은 IP가 서로 다른(이미 발송된) 번호를 여러 개
+// 동시에 브루트포스해도 번호별 한도(MAX_VERIFY_FAILS)만 각각 소모할 뿐 IP 차원의 상한이
+// 없었다. 가족·사무실처럼 여러 명이 한 IP를 공유하며 각자 실수로 몇 번씩 틀리는 상황은
+// 넉넉히 허용하되(가구당 최대 6개 번호 x 5회 한도 = 30), 한 IP가 수십~수백 개 번호를
+// 병렬로 시도하는 것은 막는다.
+export const MAX_VERIFY_FAILS_PER_IP_PER_DAY = 30;
 export const POLICY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export interface SendInput {
@@ -45,8 +51,14 @@ export function decideSend(input: SendInput): SendDecision {
   return { allowed: true };
 }
 
-export function decideVerify(input: { recentFails: number }): VerifyDecision {
-  if (input.recentFails >= MAX_VERIFY_FAILS) {
+export function decideVerify(input: {
+  recentFails: number;
+  recentFailsForIp: number;
+}): VerifyDecision {
+  if (
+    input.recentFails >= MAX_VERIFY_FAILS ||
+    input.recentFailsForIp >= MAX_VERIFY_FAILS_PER_IP_PER_DAY
+  ) {
     return { allowed: false, reason: "fail_limit" };
   }
   return { allowed: true };
