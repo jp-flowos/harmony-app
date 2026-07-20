@@ -29,6 +29,26 @@ function phoneKey(e164: string): string {
   return createHmac("sha256", secret).update(`otp:${e164}`).digest("hex").slice(0, 32);
 }
 
+// verifyOtp 실패를 "환불(=예약 행 삭제)"할지 판정한다.
+//
+// 원칙: 기본값은 "환불하지 않는다"(행을 남겨 5회 한도를 소모한다)이며, 인프라 실패로
+// *확인된* 경우에만 예외적으로 환불한다. classifyOtpError가 문자열을 인식하지 못해
+// "unknown"을 반환하는 것은 "인프라 실패로 확인됐다"는 뜻이 아니라 "무엇인지 모른다"는
+// 뜻이다 — classifyOtpError는 Supabase가 돌려주는 영문 문구("expired", "invalid" 등)를
+// substring으로 매칭해 오답을 인식하는데, 오늘 "Token has expired or is invalid"인
+// 벤더 메시지가 내일 "Token not found"처럼 재작성되면 모든 오답 시도가 unknown으로
+// 떨어진다. unknown을 환불 대상으로 취급하면 그 순간부터 5회 한도가 조용히 무제한
+// 브루트포스로 열리며, 아무 테스트도 깨지지 않고 아무 로그도 남지 않는다.
+// 그래서 환불 여부는 문자열 분류(classifyOtpError)가 아니라 HTTP status로만 판단한다:
+// status를 신뢰할 수 있는 건 "Supabase가 토큰 자체를 평가하지 않았다"는 사실을
+// status 코드가 직접 말해주기 때문이다(429=레이트리밋 거절, 5xx=서버 장애).
+export function shouldRefundVerifyAttempt(error: { status?: number } | null): boolean {
+  if (!error) return false; // 에러 없이 세션/유저가 비어있는 경우는 오답 시도로 취급 — 행을 남긴다
+  if (error.status === 429) return true; // 레이트리밋으로 거절 — 토큰을 평가하지 않았다
+  if (typeof error.status === "number" && error.status >= 500) return true; // 서버 장애 — 판정 없음
+  return false; // 그 외(classifyOtpError가 unknown으로 분류하는 경우 포함)는 행을 남긴다
+}
+
 // POST /api/auth/phone/verify — 인증번호 확인 후 세션 발급.
 // verifyOtp가 성공하면 Supabase가 세션 쿠키를 심는다 (server client의 setAll 어댑터).
 //
@@ -39,11 +59,12 @@ function phoneKey(e164: string): string {
 // insert를 먼저 하면 동시 요청들이 서로의 예약 행을 카운트에서 보게 되어 경합 창이
 // (verifyOtp 왕복 전체가 아니라) INSERT 문 사이의 짧은 간격으로 좁아진다.
 //
-// 다만 이 행은 아직 "진짜 오답"인지 모르는 예약(reservation)이다. 원칙은 "실제로 틀린
-// 코드를 넣은 시도만 5회 한도를 소모한다" — 우리 쪽 fail_limit 게이트에 막히거나
-// verifyOtp가 우리/Supabase 인프라 문제(send_limit, unknown)로 실패하면 사용자가 코드를
-// 틀린 게 아니므로 방금 넣은 예약 행을 즉시 환불(삭제)한다. code_mismatch/code_expired만
-// "진짜 오답 시도"로 보고 행을 남겨 카운터를 소모한다.
+// 다만 이 행은 아직 "진짜 오답"인지 모르는 예약(reservation)이다. 원칙은 "인프라 실패로
+// *확인된* 경우에만 환불하고, 그 외에는 전부 행을 남겨 5회 한도를 소모한다"이다 —
+// 우리 쪽 fail_limit 게이트에 막힌 경우와 Supabase가 status 429/5xx로 응답한 경우
+// (아래 shouldRefundVerifyAttempt 참고)만 환불한다. classifyOtpError가 문자열을
+// 인식하지 못해 unknown을 반환하는 경우는 "인프라 실패 확인"이 아니므로 환불하지
+// 않는다 — 자세한 이유는 shouldRefundVerifyAttempt 주석 참고.
 export async function POST(request: NextRequest) {
   const parsed = VerifySchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
@@ -106,11 +127,20 @@ export async function POST(request: NextRequest) {
 
     if (error || !data.session || !data.user) {
       const reason = error ? classifyOtpError(error) : "code_mismatch";
-      // send_limit/unknown은 인프라·레이트리밋 문제이지 오답 시도가 아니다 — 환불한다.
-      // code_mismatch/code_expired만 진짜 오답 시도이므로 예약 행을 그대로 남겨둔다.
-      if (reason !== "code_mismatch" && reason !== "code_expired" && reservedId) {
+      // 환불 여부는 classifyOtpError의 문자열 분류가 아니라 status 기반 판정 함수가
+      // 결정한다 — 위 함수 주석 참고. code_mismatch/code_expired/unknown 등 대부분의
+      // 사유는 행을 남겨 카운터를 소모하고, status 429/5xx로 확인된 인프라 실패만 환불한다.
+      if (shouldRefundVerifyAttempt(error) && reservedId) {
         await db.delete(authAttempts).where(eq(authAttempts.id, reservedId));
       }
+
+      if (reason === "send_limit") {
+        // 이 라우트는 "코드 입력" 화면이다. send_limit 문구("오늘 받을 수 있는 횟수를
+        // 모두 사용했어요...")는 발송(send) 화면 문맥이라 여기서 보여주면 사용자가
+        // 지금 하고 있는 행동(코드 입력)과 맞지 않는다 — unknown 메시지로 대체한다.
+        return errorResponse("SEND_LIMIT", otpFailureMessage("unknown"), 429);
+      }
+
       return errorResponse(reason.toUpperCase(), otpFailureMessage(reason), 400);
     }
 
