@@ -337,7 +337,7 @@ export function decideVerify(input: { recentFails: number }): VerifyDecision {
 - [ ] **Step 4: 테스트 통과 확인**
 
 Run: `bun test src/lib/otp-policy.test.ts`
-Expected: PASS (14개)
+Expected: PASS (10개)
 
 - [ ] **Step 5: 커밋**
 
