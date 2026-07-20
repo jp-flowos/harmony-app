@@ -32,7 +32,15 @@ export async function POST(request: NextRequest) {
     return errorResponse("UNAUTHORIZED", "서명이 올바르지 않습니다", 401);
   }
 
-  const parsed = HookPayloadSchema.safeParse(JSON.parse(raw));
+  let body: unknown;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    console.error("[sms-hook] malformed JSON body");
+    return errorResponse("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", 400);
+  }
+
+  const parsed = HookPayloadSchema.safeParse(body);
   if (!parsed.success) {
     console.error("[sms-hook] unexpected payload shape");
     return errorResponse("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", 400);
