@@ -812,6 +812,8 @@ Expected: FAIL — `Cannot find module './webhook-signature'`
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 // Standard Webhooks 규격 (Supabase Auth Hook이 사용).
+// 주의: 아래 코드에는 타임스탬프 허용오차 검사가 빠져 있다. 구현 시 ±5분 검사를
+// HMAC 비교 앞에 추가할 것 — 없으면 캡처된 요청이 영구 재생 가능하다 (리뷰에서 수정됨).
 // 서명 대상은 `{id}.{timestamp}.{payload}`이고 헤더에는 공백으로 구분된 여러 서명이 올 수 있다.
 export function verifyStandardWebhook(input: {
   secret: string;
