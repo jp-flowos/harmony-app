@@ -3,6 +3,7 @@
 import { ArrowLeft, WarningCircle } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { StepConsent } from "@/components/onboarding/StepConsent";
 import { StepFontScale } from "@/components/onboarding/StepFontScale";
 import { StepHobby } from "@/components/onboarding/StepHobby";
 import { StepNickname } from "@/components/onboarding/StepNickname";
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { isVoiceGuideEnabled } from "@/lib/voice/speak";
 
-type OnboardingStep = "font" | "nickname" | "region" | "hobby" | "photo";
+type OnboardingStep = "consent" | "font" | "nickname" | "region" | "hobby" | "photo";
 
 interface SavedProgress {
   step?: OnboardingStep;
@@ -23,12 +24,15 @@ interface SavedProgress {
   hobbyCategory?: string;
   hobbyIds?: string[];
   avatarUrl?: string | null;
+  agreeTerms?: boolean;
+  agreePrivacy?: boolean;
 }
 
 const STORAGE_KEY = "harmony.onboarding.progress";
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 
 const STEPS: { id: OnboardingStep; label: string }[] = [
+  { id: "consent", label: "약관 동의" },
   { id: "font", label: "글자 선택" },
   { id: "nickname", label: "이름 선택" },
   { id: "region", label: "지역 선택" },
@@ -73,13 +77,15 @@ function clearProgress(): void {
 export default function OnboardingPage() {
   const router = useRouter();
   const { scale } = useFontScale();
-  const [step, setStep] = useState<OnboardingStep>("font");
+  const [step, setStep] = useState<OnboardingStep>("consent");
   const [nickname, setNickname] = useState("");
   const [sido, setSido] = useState("");
   const [sigungu, setSigungu] = useState("");
   const [hobbyCategory, setHobbyCategory] = useState("");
   const [hobbyIds, setHobbyIds] = useState<string[]>([]);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -89,7 +95,16 @@ export default function OnboardingPage() {
   useEffect(() => {
     const saved = readProgress();
     if (saved) {
-      if (isOnboardingStep(saved.step)) setStep(saved.step);
+      // 동의 단계 추가 이전에 저장된 진행분에는 agreeTerms/agreePrivacy가 없다.
+      // 그 경우 이미 지나간 단계로 복원하면 동의 없이 완료를 시도하게 되므로,
+      // 저장된 단계는 무시하고 동의 단계부터 다시 시작한다(다른 입력값은 보존).
+      const hasConsentFields =
+        typeof saved.agreeTerms === "boolean" && typeof saved.agreePrivacy === "boolean";
+      if (hasConsentFields) {
+        setAgreeTerms(saved.agreeTerms as boolean);
+        setAgreePrivacy(saved.agreePrivacy as boolean);
+        if (isOnboardingStep(saved.step)) setStep(saved.step);
+      }
       if (typeof saved.nickname === "string") setNickname(saved.nickname);
       if (typeof saved.sido === "string") setSido(saved.sido);
       if (typeof saved.sigungu === "string") setSigungu(saved.sigungu);
@@ -104,8 +119,29 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (!restored) return;
-    writeProgress({ step, nickname, sido, sigungu, hobbyCategory, hobbyIds, avatarUrl });
-  }, [avatarUrl, hobbyCategory, hobbyIds, nickname, restored, sido, sigungu, step]);
+    writeProgress({
+      step,
+      nickname,
+      sido,
+      sigungu,
+      hobbyCategory,
+      hobbyIds,
+      avatarUrl,
+      agreeTerms,
+      agreePrivacy,
+    });
+  }, [
+    agreePrivacy,
+    agreeTerms,
+    avatarUrl,
+    hobbyCategory,
+    hobbyIds,
+    nickname,
+    restored,
+    sido,
+    sigungu,
+    step,
+  ]);
 
   function goToStep(nextStep: OnboardingStep) {
     setError("");
@@ -133,6 +169,8 @@ export default function OnboardingPage() {
           prefersVoiceGuide: isVoiceGuideEnabled(),
           hobbyIds,
           avatarUrl: avatarUrl ?? undefined,
+          agreeTerms,
+          agreePrivacy,
         }),
       });
 
@@ -203,6 +241,18 @@ export default function OnboardingPage() {
         </div>
 
         {error && <ErrorBanner message={error} />}
+
+        {step === "consent" && (
+          <StepConsent
+            agreeTerms={agreeTerms}
+            agreePrivacy={agreePrivacy}
+            onChange={(next) => {
+              setAgreeTerms(next.agreeTerms);
+              setAgreePrivacy(next.agreePrivacy);
+            }}
+            onNext={() => goToStep("font")}
+          />
+        )}
 
         {step === "font" && <StepFontScale onNext={() => goToStep("nickname")} />}
 

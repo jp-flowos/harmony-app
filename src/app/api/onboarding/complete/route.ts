@@ -2,13 +2,14 @@ import { eq, inArray } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
-import { hobbies, profiles, userHobbies, verificationBadges } from "@/db/schema";
+import { hobbies, profiles, userConsents, userHobbies, verificationBadges } from "@/db/schema";
 import {
   serverError,
   successResponse,
   unauthorizedError,
   validationError,
 } from "@/lib/api-response";
+import { CONSENT_VERSION } from "@/lib/auth-utils";
 import { createClient } from "@/lib/supabase/server";
 
 const CompleteOnboardingSchema = z.object({
@@ -37,6 +38,8 @@ const CompleteOnboardingSchema = z.object({
     )
     .nullable()
     .optional(),
+  agreeTerms: z.literal(true, "이용약관 동의가 필요해요"),
+  agreePrivacy: z.literal(true, "개인정보 처리방침 동의가 필요해요"),
 });
 
 export async function POST(request: NextRequest) {
@@ -76,6 +79,8 @@ export async function POST(request: NextRequest) {
         sigungu,
         fontScale,
         prefersVoiceGuide,
+        // auth.users.phone이 정본이다. 프로필은 가입 시점에 복사만 한다.
+        ...(user.phone ? { phone: `+${user.phone.replace(/^\+/, "")}` } : {}),
         ...(avatarUrl ? { avatarUrl } : {}),
       };
 
@@ -108,6 +113,13 @@ export async function POST(request: NextRequest) {
           type: "first_meeting",
         })
         .onConflictDoNothing();
+
+      // 온보딩을 다시 완료해도 동의가 중복 적재되지 않도록 기존 버전 기록을 정리한다.
+      await tx.delete(userConsents).where(eq(userConsents.userId, user.id));
+      await tx.insert(userConsents).values([
+        { userId: user.id, consentType: "terms", version: CONSENT_VERSION },
+        { userId: user.id, consentType: "privacy", version: CONSENT_VERSION },
+      ]);
     });
 
     return successResponse({ ok: true });
