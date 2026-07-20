@@ -5,12 +5,8 @@ import { KEEP_SIGNIN_COOKIE, shouldPersist, stripPersistence } from "@/lib/supab
 const publicPaths = [
   "/login",
   "/logout",
-  "/register",
   "/onboarding",
   "/api/auth",
-  "/find-id",
-  "/find-password",
-  "/reset-password",
   "/terms",
   "/privacy",
   // PWA + offline shell — must be reachable without a session

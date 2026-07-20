@@ -8,7 +8,7 @@ export default function TermsPage() {
   return (
     <div className="mx-auto max-w-lg px-5 py-8">
       <Link
-        href="/register"
+        href="/login"
         className="inline-flex items-center gap-1 text-base font-semibold text-mocha-700"
       >
         <ArrowLeft size={20} />

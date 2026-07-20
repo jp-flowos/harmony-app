@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Bell, CaretRight, FileText, Info, Lock, Trash } from "@phosphor-icons/react";
+import { ArrowLeft, Bell, CaretRight, FileText, Info, Trash } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,6 @@ import type { NotificationSettings } from "@/lib/notifications";
 import { DEFAULT_NOTIFICATION_SETTINGS } from "@/lib/notifications";
 
 const settingsItems = [
-  { label: "비밀번호 변경", icon: Lock, href: "#" },
   { label: "개인정보 처리방침", icon: FileText, href: "#" },
   { label: "이용약관", icon: Info, href: "#" },
   { label: "계정 삭제", icon: Trash, href: "#", danger: true },
