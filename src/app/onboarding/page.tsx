@@ -1,27 +1,23 @@
 "use client";
 
-import { ArrowLeft, WarningCircle } from "@phosphor-icons/react";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { StepConsent } from "@/components/onboarding/StepConsent";
 import { StepFontScale } from "@/components/onboarding/StepFontScale";
-import { StepHobby } from "@/components/onboarding/StepHobby";
-import { StepNickname } from "@/components/onboarding/StepNickname";
-import { StepPhoto } from "@/components/onboarding/StepPhoto";
-import { StepRegion } from "@/components/onboarding/StepRegion";
+import { StepProfile } from "@/components/onboarding/StepProfile";
 import { useFontScale } from "@/components/providers/FontScaleProvider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { isVoiceGuideEnabled } from "@/lib/voice/speak";
 
-type OnboardingStep = "consent" | "font" | "nickname" | "region" | "hobby" | "photo";
+type OnboardingStep = "consent" | "font" | "profile";
 
 interface SavedProgress {
   step?: OnboardingStep;
   nickname?: string;
   sido?: string;
   sigungu?: string;
-  hobbyCategory?: string;
+  bio?: string;
   hobbyIds?: string[];
   avatarUrl?: string | null;
   agreeTerms?: boolean;
@@ -34,10 +30,7 @@ const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 const STEPS: { id: OnboardingStep; label: string }[] = [
   { id: "consent", label: "약관 동의" },
   { id: "font", label: "글자 선택" },
-  { id: "nickname", label: "이름 선택" },
-  { id: "region", label: "지역 선택" },
-  { id: "hobby", label: "취미 선택" },
-  { id: "photo", label: "사진 선택" },
+  { id: "profile", label: "프로필 등록" },
 ];
 
 function isOnboardingStep(value: unknown): value is OnboardingStep {
@@ -81,7 +74,7 @@ export default function OnboardingPage() {
   const [nickname, setNickname] = useState("");
   const [sido, setSido] = useState("");
   const [sigungu, setSigungu] = useState("");
-  const [hobbyCategory, setHobbyCategory] = useState("");
+  const [bio, setBio] = useState("");
   const [hobbyIds, setHobbyIds] = useState<string[]>([]);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -108,7 +101,7 @@ export default function OnboardingPage() {
       if (typeof saved.nickname === "string") setNickname(saved.nickname);
       if (typeof saved.sido === "string") setSido(saved.sido);
       if (typeof saved.sigungu === "string") setSigungu(saved.sigungu);
-      if (typeof saved.hobbyCategory === "string") setHobbyCategory(saved.hobbyCategory);
+      if (typeof saved.bio === "string") setBio(saved.bio);
       if (Array.isArray(saved.hobbyIds)) {
         setHobbyIds(saved.hobbyIds.filter((id): id is string => typeof id === "string"));
       }
@@ -124,24 +117,13 @@ export default function OnboardingPage() {
       nickname,
       sido,
       sigungu,
-      hobbyCategory,
+      bio,
       hobbyIds,
       avatarUrl,
       agreeTerms,
       agreePrivacy,
     });
-  }, [
-    agreePrivacy,
-    agreeTerms,
-    avatarUrl,
-    hobbyCategory,
-    hobbyIds,
-    nickname,
-    restored,
-    sido,
-    sigungu,
-    step,
-  ]);
+  }, [agreePrivacy, agreeTerms, avatarUrl, bio, hobbyIds, nickname, restored, sido, sigungu, step]);
 
   function goToStep(nextStep: OnboardingStep) {
     setError("");
@@ -165,6 +147,7 @@ export default function OnboardingPage() {
           nickname: nickname.trim(),
           sido,
           sigungu: sigungu.trim(),
+          bio: bio.trim() || undefined,
           fontScale: scale,
           prefersVoiceGuide: isVoiceGuideEnabled(),
           hobbyIds,
@@ -191,10 +174,13 @@ export default function OnboardingPage() {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-6 sm:p-8">
-        {/* 시안형 헤더: 뒤로 + 단계명 + 건너뛰기·문의하기 + 얇은 진행 바 */}
-        <div className="mb-6 space-y-4">
+    <div className="flex h-dvh flex-col bg-cream-50">
+      {/* 시안형 헤더: 뒤로 + 단계명 + 건너뛰기·문의하기 + 얇은 진행 바 */}
+      <header
+        className="shrink-0 border-b border-mocha-100 bg-white px-5 pb-3"
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+      >
+        <div className="mx-auto w-full max-w-lg space-y-3">
           <div className="flex items-center justify-between gap-2">
             {stepIndex > 0 ? (
               <button
@@ -208,13 +194,15 @@ export default function OnboardingPage() {
             ) : (
               <span className="h-11 w-11 shrink-0" aria-hidden="true" />
             )}
-            <h1 className="min-w-0 truncate text-xl font-extrabold text-mocha-900">
+            <h1 className="min-w-0 truncate text-lg font-extrabold text-mocha-900">
               {STEPS[stepIndex].label}
             </h1>
             <div className="flex shrink-0 items-center">
-              <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/")}>
-                건너뛰기
-              </Button>
+              {step !== "profile" && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/")}>
+                  건너뛰기
+                </Button>
+              )}
               {SUPPORT_EMAIL && (
                 <a
                   href={`mailto:${SUPPORT_EMAIL}`}
@@ -239,10 +227,10 @@ export default function OnboardingPage() {
             />
           </div>
         </div>
+      </header>
 
-        {error && <ErrorBanner message={error} />}
-
-        {step === "consent" && (
+      {step === "consent" && (
+        <StepScroll>
           <StepConsent
             agreeTerms={agreeTerms}
             agreePrivacy={agreePrivacy}
@@ -252,55 +240,42 @@ export default function OnboardingPage() {
             }}
             onNext={() => goToStep("font")}
           />
-        )}
+        </StepScroll>
+      )}
 
-        {step === "font" && <StepFontScale onNext={() => goToStep("nickname")} />}
+      {step === "font" && (
+        <StepScroll>
+          <StepFontScale onNext={() => goToStep("profile")} />
+        </StepScroll>
+      )}
 
-        {step === "nickname" && (
-          <StepNickname value={nickname} onChange={setNickname} onNext={() => goToStep("region")} />
-        )}
-
-        {step === "region" && (
-          <StepRegion
-            sido={sido}
-            sigungu={sigungu}
-            onSidoChange={setSido}
-            onSigunguChange={setSigungu}
-            onNext={() => goToStep("hobby")}
-          />
-        )}
-
-        {step === "hobby" && (
-          <StepHobby
-            category={hobbyCategory}
-            onCategoryChange={setHobbyCategory}
-            hobbyIds={hobbyIds}
-            onChange={setHobbyIds}
-            onNext={() => goToStep("photo")}
-          />
-        )}
-
-        {step === "photo" && (
-          <StepPhoto
-            avatarUrl={avatarUrl}
-            onUploaded={setAvatarUrl}
-            onComplete={handleComplete}
-            loading={loading}
-          />
-        )}
-      </CardContent>
-    </Card>
+      {step === "profile" && (
+        <StepProfile
+          nickname={nickname}
+          onNicknameChange={setNickname}
+          sido={sido}
+          sigungu={sigungu}
+          onSidoChange={setSido}
+          onSigunguChange={setSigungu}
+          bio={bio}
+          onBioChange={setBio}
+          hobbyIds={hobbyIds}
+          onHobbyIdsChange={setHobbyIds}
+          avatarUrl={avatarUrl}
+          onAvatarUploaded={setAvatarUrl}
+          onComplete={handleComplete}
+          loading={loading}
+          submitError={error}
+        />
+      )}
+    </div>
   );
 }
 
-function ErrorBanner({ message }: { message: string }) {
+function StepScroll({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      role="alert"
-      className="mb-5 flex items-start gap-3 rounded-2xl border-2 border-[var(--color-danger)]/30 bg-[var(--color-danger-bg)] p-4 text-base font-medium text-[var(--color-danger)]"
-    >
-      <WarningCircle size={26} weight="fill" className="mt-0.5 shrink-0" />
-      <span className="pt-0.5">{message}</span>
-    </div>
+    <main className="flex-1 overflow-y-auto px-5 py-6">
+      <div className="mx-auto w-full max-w-lg">{children}</div>
+    </main>
   );
 }

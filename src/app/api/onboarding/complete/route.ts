@@ -21,6 +21,7 @@ const CompleteOnboardingSchema = z.object({
     .regex(/^[가-힣a-zA-Z0-9]{2,7}$/, "닉네임 형식이 올바르지 않습니다"),
   sido: z.string().trim().min(1, "지역을 선택해주세요"),
   sigungu: z.string().trim().max(20, "시/군/구가 올바르지 않아요").nullable().optional(),
+  bio: z.string().trim().max(200, "자기소개는 200자까지 입력할 수 있어요").nullable().optional(),
   hobbyIds: z
     .array(z.string().trim().min(1))
     .min(1, "취미를 선택해주세요")
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
 
     const { nickname, sido, hobbyIds, fontScale, prefersVoiceGuide } = parsed.data;
     const sigungu = parsed.data.sigungu || null;
+    const bio = parsed.data.bio || null;
     const avatarUrl = parsed.data.avatarUrl || null;
     const region = sigungu ? `${sido} ${sigungu}` : sido;
     const uniqueHobbyIds = [...new Set(hobbyIds)];
@@ -79,6 +81,7 @@ export async function POST(request: NextRequest) {
         region,
         sido,
         sigungu,
+        bio,
         fontScale,
         prefersVoiceGuide,
         // auth.users.phone이 정본이다. 프로필은 가입 시점에 복사만 한다.

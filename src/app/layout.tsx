@@ -62,6 +62,8 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: dark)", color: "#ec6a52" },
   ],
   viewportFit: "cover", // Required for iOS safe-area-inset to work
+  // 소프트 키보드가 뜨면 레이아웃 뷰포트(및 h-dvh)를 줄여, 하단 고정 완료 버튼이 키보드 위로 올라오게 한다
+  interactiveWidget: "resizes-content",
   colorScheme: "light",
 };
 
