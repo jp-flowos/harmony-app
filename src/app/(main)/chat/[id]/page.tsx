@@ -1,16 +1,30 @@
-"use client";
-
-import { ArrowLeft } from "@phosphor-icons/react";
+import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
+import { eq } from "drizzle-orm";
 import Link from "next/link";
-import { use } from "react";
+import { redirect } from "next/navigation";
 import { ChatRoom } from "@/components/chat/ChatRoom";
+import { db } from "@/db";
+import { profiles } from "@/db/schema";
+import { createClient } from "@/lib/supabase/server";
 
 interface ChatDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default function ChatDetailPage({ params }: ChatDetailPageProps) {
-  const { id } = use(params);
+export default async function ChatDetailPage({ params }: ChatDetailPageProps) {
+  const { id } = await params;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const [me] = await db
+    .select({ nickname: profiles.nickname })
+    .from(profiles)
+    .where(eq(profiles.id, user.id))
+    .limit(1);
 
   return (
     <div className="flex h-[calc(100vh-5rem)] flex-col">
@@ -20,7 +34,7 @@ export default function ChatDetailPage({ params }: ChatDetailPageProps) {
         </Link>
         <h1 className="text-lg font-bold text-gray-900">채팅방</h1>
       </div>
-      <ChatRoom roomId={id} currentUserId="demo-user" currentUserNickname="활기찬시니어" />
+      <ChatRoom roomId={id} currentUserId={user.id} currentUserNickname={me?.nickname ?? "회원"} />
     </div>
   );
 }
