@@ -7,6 +7,7 @@ import {
   ImageSquare,
   MapPin,
   Plus,
+  PushPin,
   Users,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -36,6 +37,15 @@ interface MeetingItem {
   maxParticipants: number;
 }
 
+interface NoticeItem {
+  id: string;
+  title: string | null;
+  content: string;
+  imageUrl: string | null;
+  isPinned: boolean;
+  dateLabel: string;
+}
+
 const CATEGORY_EMOJI: Record<string, string> = {
   등산: "⛰️",
   골프: "⛳",
@@ -52,11 +62,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 // Mock data — to be replaced when respective domains are wired (Phase 3+):
-//   notices ← h_club_posts type='notice', posts ← h_club_posts, members ← h_club_members
-const notices = [
-  { id: "1", content: "3월 정기모임: 3/15(토) 북한산 코스", date: "2024-03-01" },
-  { id: "2", content: "신입 회원 환영합니다!", date: "2024-02-28" },
-];
+//   posts ← h_club_posts, members ← h_club_members (notices are now real data)
 const posts = [
   {
     id: "1",
@@ -87,18 +93,45 @@ const roleLabels: Record<string, string> = { owner: "모임장", admin: "운영�
 export function ClubDetailClient({
   club,
   meetings,
+  notices,
+  canManageNotices,
+  canDeleteNotices,
   canCreateMeeting,
   myRole,
 }: {
   club: ClubInfo;
   meetings: MeetingItem[];
+  notices: NoticeItem[];
+  canManageNotices: boolean;
+  canDeleteNotices: boolean;
   canCreateMeeting: boolean;
   myRole: "owner" | "admin" | "member" | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [noticeError, setNoticeError] = useState<string | null>(null);
   const joined = myRole !== null;
+
+  async function handleDeleteNotice(noticeId: string) {
+    if (!window.confirm("이 공지를 삭제할까요?")) return;
+    setDeletingId(noticeId);
+    setNoticeError(null);
+    try {
+      const res = await fetch(`/api/clubs/${club.id}/notices/${noticeId}`, { method: "DELETE" });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setNoticeError(json?.error?.message ?? "공지를 삭제하지 못했어요. 다시 시도해주세요");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setNoticeError("공지를 삭제하지 못했어요. 다시 시도해주세요");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function handleJoinToggle() {
     if (joined && !window.confirm("클럽에서 탈퇴할까요?")) return;
@@ -189,11 +222,67 @@ export function ClubDetailClient({
           </TabsList>
 
           <TabsContent value="notice" className="space-y-3">
+            {canManageNotices && (
+              <Link href={`/club/${club.id}/notice/create`} className="block">
+                <Button className="w-full" size="lg" variant="outline">
+                  <Plus size={22} weight="bold" />
+                  공지 등록
+                </Button>
+              </Link>
+            )}
+            {noticeError && (
+              <p className="text-base font-semibold text-red-600">{noticeError}</p>
+            )}
+            {notices.length === 0 && (
+              <p className="py-8 text-center text-base text-gray-400">아직 등록된 공지가 없어요</p>
+            )}
             {notices.map((n) => (
               <Card key={n.id}>
-                <CardContent className="p-4">
-                  <p className="text-base font-medium text-gray-900">{n.content}</p>
-                  <p className="mt-1 text-sm text-gray-400">{n.date}</p>
+                <CardContent className="space-y-2 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      {n.isPinned && (
+                        <Badge className="mb-1">
+                          <PushPin size={14} weight="fill" className="mr-1" /> 중요
+                        </Badge>
+                      )}
+                      {n.title && (
+                        <h3 className="text-lg font-bold text-gray-900 leading-snug">{n.title}</h3>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-sm text-gray-400">{n.dateLabel}</span>
+                  </div>
+                  <p className="whitespace-pre-wrap text-base text-gray-700">{n.content}</p>
+                  {n.imageUrl && (
+                    // biome-ignore lint/performance/noImgElement: 스토리지 public URL — next/image 도메인 보장 불가
+                    <img
+                      src={n.imageUrl}
+                      alt=""
+                      className="max-h-72 w-full rounded-xl object-cover"
+                    />
+                  )}
+                  {(canManageNotices || canDeleteNotices) && (
+                    <div className="flex gap-2 pt-1">
+                      {canManageNotices && (
+                        <Link href={`/club/${club.id}/notice/${n.id}/edit`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            수정
+                          </Button>
+                        </Link>
+                      )}
+                      {canDeleteNotices && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 text-red-600"
+                          disabled={deletingId === n.id}
+                          onClick={() => handleDeleteNotice(n.id)}
+                        >
+                          {deletingId === n.id ? "삭제 중..." : "삭제"}
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

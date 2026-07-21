@@ -1,10 +1,25 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { clubMeetings, clubMembers, clubs, meetingParticipants, meetingRsvps } from "@/db/schema";
+import {
+  clubMeetings,
+  clubMembers,
+  clubPosts,
+  clubs,
+  meetingParticipants,
+  meetingRsvps,
+} from "@/db/schema";
 import { requireUser } from "@/lib/auth-session";
 import { formatMeetingDate } from "@/lib/format-date";
 import { ClubDetailClient } from "./ClubDetailClient";
+
+// 공지 게시일 표기 — 시니어 가독성 위해 "2026년 7월 21일" 형태
+const NOTICE_DATE_FMT = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
 
 export default async function ClubDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,6 +61,26 @@ export default async function ClubDetailPage({ params }: { params: Promise<{ id:
     .where(eq(clubMeetings.clubId, id))
     .orderBy(asc(clubMeetings.date));
 
+  // 공지: type='notice' + 숨김 아님. 중요 공지 먼저, 그다음 최신 게시일순.
+  const noticeRows = await db
+    .select({
+      id: clubPosts.id,
+      title: clubPosts.title,
+      content: clubPosts.content,
+      imageUrls: clubPosts.imageUrls,
+      isPinned: clubPosts.isPinned,
+      publishedAt: clubPosts.publishedAt,
+    })
+    .from(clubPosts)
+    .where(
+      and(
+        eq(clubPosts.clubId, id),
+        eq(clubPosts.type, "notice"),
+        sql`${clubPosts.isHidden} is not true`
+      )
+    )
+    .orderBy(desc(clubPosts.isPinned), desc(clubPosts.publishedAt));
+
   return (
     <ClubDetailClient
       club={{
@@ -64,6 +99,16 @@ export default async function ClubDetailPage({ params }: { params: Promise<{ id:
         joinedCount: m.joinedCount,
         maxParticipants: m.maxParticipants ?? 20,
       }))}
+      notices={noticeRows.map((n) => ({
+        id: n.id,
+        title: n.title,
+        content: n.content,
+        imageUrl: n.imageUrls?.[0] ?? null,
+        isPinned: n.isPinned,
+        dateLabel: NOTICE_DATE_FMT.format(n.publishedAt),
+      }))}
+      canManageNotices={myRole === "owner" || myRole === "admin"}
+      canDeleteNotices={myRole === "owner"}
       canCreateMeeting={myRole === "owner" || myRole === "admin"}
       myRole={myRole}
     />

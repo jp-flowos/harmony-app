@@ -65,11 +65,14 @@ export const clubPosts = pgTable("h_club_posts", {
   clubId: text("club_id").references(() => clubs.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => profiles.id),
   type: postTypeEnum("type").default("general"),
+  title: text("title"), // 공지 제목 (notice 전용, 게시판 글은 NULL)
   content: text("content").notNull(),
   imageUrls: jsonb("image_urls").$type<string[]>().default([]),
   likeCount: integer("like_count").default(0),
   commentCount: integer("comment_count").default(0),
+  isPinned: boolean("is_pinned").notNull().default(false), // 중요 공지 상단 고정
   isHidden: boolean("is_hidden").default(false),
+  publishedAt: timestamp("published_at", { withTimezone: true }).notNull().defaultNow(), // 게시일(정렬 기준)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
