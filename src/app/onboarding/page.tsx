@@ -7,7 +7,6 @@ import { StepConsent } from "@/components/onboarding/StepConsent";
 import { StepFontScale } from "@/components/onboarding/StepFontScale";
 import { StepProfile } from "@/components/onboarding/StepProfile";
 import { useFontScale } from "@/components/providers/FontScaleProvider";
-import { Button } from "@/components/ui/button";
 import { isVoiceGuideEnabled } from "@/lib/voice/speak";
 
 type OnboardingStep = "consent" | "font" | "profile";
@@ -157,10 +156,16 @@ export default function OnboardingPage() {
         }),
       });
 
-      const payload = (await response.json().catch(() => null)) as { success?: boolean } | null;
+      const payload = (await response.json().catch(() => null)) as
+        | { success?: boolean; error?: { message?: string } }
+        | null;
 
       if (!response.ok || payload?.success === false) {
-        throw new Error("Onboarding complete request failed");
+        // 서버가 준 구체적 안내(예: 전화번호 충돌 시 고객센터 문의)가 있으면 그대로 노출한다.
+        setError(
+          payload?.error?.message ?? "온보딩 정보를 저장하지 못했어요. 잠시 후 다시 시도해주세요."
+        );
+        return;
       }
 
       clearProgress();
@@ -198,11 +203,8 @@ export default function OnboardingPage() {
               {STEPS[stepIndex].label}
             </h1>
             <div className="flex shrink-0 items-center">
-              {step !== "profile" && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/")}>
-                  건너뛰기
-                </Button>
-              )}
+              {/* 약관 동의는 최종 저장(complete) 시점에만 기록되므로, 완료 전 이탈(건너뛰기)을
+                  허용하면 필수 동의가 저장되지 않는다. 온보딩은 끝까지 진행해야 한다. */}
               {SUPPORT_EMAIL && (
                 <a
                   href={`mailto:${SUPPORT_EMAIL}`}

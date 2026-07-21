@@ -276,7 +276,7 @@ export default async function HomePage() {
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{notice.clubName}</Badge>
                       <span className="text-sm font-semibold text-mocha-500">
-                        {relativeTimeLabel(notice.createdAt)}
+                        {relativeTimeLabel(notice.publishedAt)}
                       </span>
                     </div>
                     <p className="mt-2 line-clamp-2 text-base font-medium text-mocha-800 leading-snug">

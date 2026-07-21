@@ -134,7 +134,7 @@ export type HomeNotice = {
   clubName: string;
   title: string | null;
   content: string;
-  createdAt: Date;
+  publishedAt: Date;
 };
 
 // 내가 가입한 클럽의 공지(notice)글 — 홈 "클럽 공지" 섹션. 클럽 상세와 동일하게 중요 먼저·최신 게시일순.
@@ -146,7 +146,7 @@ export async function getMyClubNotices(userId: string, limit = LIST_LIMIT): Prom
       clubName: clubs.name,
       title: clubPosts.title,
       content: clubPosts.content,
-      createdAt: clubPosts.createdAt,
+      publishedAt: clubPosts.publishedAt,
     })
     .from(clubPosts)
     .innerJoin(
@@ -166,7 +166,7 @@ export async function getMyClubNotices(userId: string, limit = LIST_LIMIT): Prom
     ...r,
     clubId: r.clubId ?? "",
     clubName: r.clubName ?? "클럽",
-    createdAt: r.createdAt ?? new Date(),
+    publishedAt: r.publishedAt ?? new Date(),
   }));
 }
 
