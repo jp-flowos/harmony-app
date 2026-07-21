@@ -13,7 +13,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,6 +44,13 @@ interface NoticeItem {
   imageUrl: string | null;
   isPinned: boolean;
   dateLabel: string;
+}
+
+interface MemberItem {
+  id: string;
+  nickname: string;
+  avatarUrl: string | null;
+  role: "owner" | "admin" | "member";
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -81,12 +88,6 @@ const posts = [
     date: "2024-03-01",
   },
 ];
-const members = [
-  { id: "u1", nickname: "산사랑", role: "owner" as const },
-  { id: "u2", nickname: "등산매니아", role: "admin" as const },
-  { id: "u3", nickname: "건강한인생", role: "member" as const },
-  { id: "u4", nickname: "행복한시니어", role: "member" as const },
-];
 const photoSlots = ["photo-1", "photo-2", "photo-3", "photo-4", "photo-5", "photo-6"] as const;
 const roleLabels: Record<string, string> = { owner: "모임장", admin: "운영진", member: "멤버" };
 
@@ -94,6 +95,7 @@ export function ClubDetailClient({
   club,
   meetings,
   notices,
+  members,
   canManageNotices,
   canDeleteNotices,
   canCreateMeeting,
@@ -102,6 +104,7 @@ export function ClubDetailClient({
   club: ClubInfo;
   meetings: MeetingItem[];
   notices: NoticeItem[];
+  members: MemberItem[];
   canManageNotices: boolean;
   canDeleteNotices: boolean;
   canCreateMeeting: boolean;
@@ -361,18 +364,26 @@ export function ClubDetailClient({
           </TabsContent>
 
           <TabsContent value="members" className="space-y-3">
+            {members.length === 0 && (
+              <p className="py-8 text-center text-base text-gray-400">아직 멤버가 없어요</p>
+            )}
             {members.map((m) => (
-              <div key={m.id} className="flex items-center gap-3 rounded-xl bg-white p-3">
+              <Link
+                key={m.id}
+                href={`/users/${m.id}`}
+                className="flex items-center gap-3 rounded-xl bg-white p-3 transition-colors hover:bg-coral-50"
+              >
                 <Avatar>
+                  {m.avatarUrl ? <AvatarImage src={m.avatarUrl} alt="" /> : null}
                   <AvatarFallback>{m.nickname[0]}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <span className="text-base font-medium text-gray-900">{m.nickname}</span>
+                <div className="flex-1 min-w-0">
+                  <span className="truncate text-base font-medium text-gray-900">{m.nickname}</span>
                 </div>
                 <Badge variant={m.role === "owner" ? "default" : "secondary"}>
                   {roleLabels[m.role]}
                 </Badge>
-              </div>
+              </Link>
             ))}
           </TabsContent>
         </Tabs>

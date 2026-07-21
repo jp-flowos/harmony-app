@@ -1,214 +1,199 @@
-"use client";
-
-import {
-  CalendarDots,
-  ChatCircle,
-  Heart,
-  MapPin,
-  UserMinus,
-  UserPlus,
-  UsersThree,
-} from "@phosphor-icons/react";
+import { MapPin, Prohibit, SealCheck, UserMinus, UsersThree } from "@phosphor-icons/react/dist/ssr";
+import { and, eq } from "drizzle-orm";
 import Link from "next/link";
-import { use, useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { redirect } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
+import { UserProfileActions } from "@/components/user/UserProfileActions";
+import { db } from "@/db";
+import { clubMembers, clubs, hobbies, profiles, userHobbies } from "@/db/schema";
+import { requireUser } from "@/lib/auth-session";
+import { getBlockRelation } from "@/lib/blocks";
+import { categoryEmoji } from "@/lib/club-emoji";
 
-// Mock user profiles
-const mockProfiles: Record<
-  string,
-  {
-    id: string;
-    nickname: string;
-    region: string;
-    bio: string;
-    hobbies: string[];
-    clubCount: number;
-    reviewCount: number;
-    isVerified: boolean;
-    joinedDate: string;
-    activities: Array<{ id: string; type: string; title: string; date: string }>;
+export default async function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const viewer = await requireUser();
+
+  // #6 본인 프로필 → 마이페이지로 분기
+  if (id === viewer.id) redirect("/mypage");
+
+  // 안전 projection — 인증정보(phone/name/birthYear/email)는 절대 select 하지 않는다.
+  const [profile] = await db
+    .select({
+      id: profiles.id,
+      nickname: profiles.nickname,
+      region: profiles.region,
+      bio: profiles.bio,
+      avatarUrl: profiles.avatarUrl,
+      isVerified: profiles.isVerified,
+    })
+    .from(profiles)
+    .where(eq(profiles.id, id))
+    .limit(1);
+
+  // #4 프로필 부재(탈퇴 등) → 안내
+  if (!profile) return <NoticeState icon="withdrawn" title="탈퇴한 사용자입니다" />;
+
+  // #5 차단 관계 → 프로필/채팅 접근 제한
+  const rel = await getBlockRelation(viewer.id, id);
+  if (rel.blockedByThem && !rel.iBlocked) {
+    // 상대가 나를 차단 — 차단 사실은 드러내지 않는 중립 안내
+    return <NoticeState icon="unavailable" title="프로필을 볼 수 없습니다" />;
   }
-> = {
-  user1: {
-    id: "user1",
-    nickname: "산사랑",
-    region: "서울 강남구",
-    bio: "등산과 골프를 좋아하는 60대입니다. 함께 활동할 친구를 찾아요!",
-    hobbies: ["등산", "골프", "독서"],
-    clubCount: 3,
-    reviewCount: 12,
-    isVerified: true,
-    joinedDate: "2024-01-15",
-    activities: [
-      { id: "a1", type: "모임 참여", title: "북한산 봄맞이 등산", date: "2024-03-01" },
-      { id: "a2", type: "후기 작성", title: "서울 등산 모임 후기", date: "2024-02-28" },
-      { id: "a3", type: "클럽 가입", title: "골프 친구들", date: "2024-02-20" },
-    ],
-  },
-  user2: {
-    id: "user2",
-    nickname: "여행가",
-    region: "부산 해운대구",
-    bio: "퇴직 후 여행과 사진에 빠졌습니다. 전국 방방곡곡 함께 다녀요.",
-    hobbies: ["여행", "사진", "요리"],
-    clubCount: 5,
-    reviewCount: 24,
-    isVerified: true,
-    joinedDate: "2024-02-01",
-    activities: [
-      { id: "a1", type: "후기 작성", title: "제주도 3박4일 여행 후기", date: "2024-03-02" },
-      { id: "a2", type: "모임 참여", title: "부산 사진 동호회", date: "2024-02-25" },
-    ],
-  },
-};
-
-export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const [isFollowing, setIsFollowing] = useState(false);
-
-  const profile = mockProfiles[id];
-
-  if (!profile) {
+  if (rel.iBlocked) {
+    // 내가 차단 — 상세 미표시 + 해제 경로 제공
     return (
-      <div className="p-4">
-        <EmptyState
-          icon="users"
-          title="사용자를 찾을 수 없습니다"
-          description="존재하지 않는 프로필입니다"
-          action={
-            <Link href="/">
-              <Button variant="outline">홈으로</Button>
-            </Link>
-          }
-        />
+      <div className="space-y-4 p-4">
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+            <ProfileAvatar nickname={profile.nickname} avatarUrl={profile.avatarUrl} size="lg" />
+            <p className="text-lg font-bold text-mocha-900">차단한 사용자입니다</p>
+            <p className="text-base text-mocha-500">
+              차단을 해제하면 프로필과 채팅을 다시 볼 수 있어요
+            </p>
+            <div className="w-full max-w-xs">
+              <UserProfileActions targetId={id} nickname={profile.nickname} mode="blocked-by-me" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const handleFollowToggle = () => {
-    setIsFollowing((prev) => !prev);
-  };
+  // 정상 — 취미 + 공통 클럽 로드
+  const hobbyRows = await db
+    .select({ name: hobbies.name })
+    .from(userHobbies)
+    .innerJoin(hobbies, eq(userHobbies.hobbyId, hobbies.id))
+    .where(eq(userHobbies.userId, id));
+  const hobbyNames = hobbyRows.map((h) => h.name);
+
+  // 공통 참여 클럽 — 뷰어와 대상이 모두 active 멤버인 클럽 (교집합)
+  const [viewerClubIds, targetClubs] = await Promise.all([
+    db
+      .select({ clubId: clubMembers.clubId })
+      .from(clubMembers)
+      .where(and(eq(clubMembers.userId, viewer.id), eq(clubMembers.status, "active"))),
+    db
+      .select({ id: clubs.id, name: clubs.name, category: clubs.category })
+      .from(clubMembers)
+      .innerJoin(clubs, eq(clubMembers.clubId, clubs.id))
+      .where(and(eq(clubMembers.userId, id), eq(clubMembers.status, "active"))),
+  ]);
+  const viewerSet = new Set(viewerClubIds.map((r) => r.clubId));
+  const commonClubs = targetClubs.filter((c) => viewerSet.has(c.id));
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Profile Header */}
+    <div className="space-y-4 p-4">
+      {/* 프로필 헤더 */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarFallback className="text-2xl bg-orange-100 text-orange-600">
-                {profile.nickname[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-gray-900">{profile.nickname}</h1>
-                {profile.isVerified && <Badge className="bg-blue-100 text-blue-700">인증됨</Badge>}
+            <ProfileAvatar nickname={profile.nickname} avatarUrl={profile.avatarUrl} size="lg" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold text-mocha-900">{profile.nickname}</h1>
+                {profile.isVerified && (
+                  <Badge className="gap-1">
+                    <SealCheck size={14} weight="fill" /> 인증됨
+                  </Badge>
+                )}
               </div>
-              <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
-                <MapPin size={14} />
-                {profile.region}
-              </div>
-              <p className="mt-2 text-sm text-gray-600">{profile.bio}</p>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-lg font-bold text-gray-900">{profile.clubCount}</p>
-              <p className="text-xs text-gray-500">클럽</p>
-            </div>
-            <div>
-              <p className="text-lg font-bold text-gray-900">{profile.reviewCount}</p>
-              <p className="text-xs text-gray-500">후기</p>
-            </div>
-            <div>
-              <p className="text-lg font-bold text-gray-900">{profile.activities.length}</p>
-              <p className="text-xs text-gray-500">활동</p>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-4 flex gap-2">
-            <Button
-              onClick={handleFollowToggle}
-              variant={isFollowing ? "outline" : "default"}
-              className="flex-1"
-            >
-              {isFollowing ? (
-                <>
-                  <UserMinus size={16} className="mr-1" />
-                  팔로잉
-                </>
-              ) : (
-                <>
-                  <UserPlus size={16} className="mr-1" />
-                  팔로우
-                </>
+              {profile.region && (
+                <p className="mt-1 flex items-center gap-1 text-base text-mocha-500">
+                  <MapPin size={16} weight="duotone" />
+                  {profile.region}
+                </p>
               )}
-            </Button>
-            <Link href="/chat" className="flex-1">
-              <Button variant="outline" className="w-full">
-                <ChatCircle size={16} className="mr-1" />
-                메시지
-              </Button>
-            </Link>
+              {profile.bio && (
+                <p className="mt-2 whitespace-pre-wrap text-base text-mocha-700">{profile.bio}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <UserProfileActions targetId={id} nickname={profile.nickname} mode="normal" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Hobbies */}
-      <section>
-        <h2 className="text-lg font-bold text-gray-900 mb-2">관심 취미</h2>
-        <div className="flex flex-wrap gap-2">
-          {profile.hobbies.map((hobby) => (
-            <Badge key={hobby} variant="secondary" className="px-3 py-1">
-              {hobby}
-            </Badge>
-          ))}
-        </div>
-      </section>
+      {/* 관심 취미 */}
+      {hobbyNames.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-lg font-bold text-mocha-900">관심 취미</h2>
+          <div className="flex flex-wrap gap-2">
+            {hobbyNames.map((name) => (
+              <Badge key={name} variant="secondary" className="px-3 py-1 text-base">
+                {name}
+              </Badge>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Recent Activity */}
-      <section>
-        <h2 className="text-lg font-bold text-gray-900 mb-2">최근 활동</h2>
-        <div className="space-y-2">
-          {profile.activities.map((activity) => (
-            <Card key={activity.id}>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                  {activity.type === "모임 참여" && (
-                    <UsersThree size={18} className="text-blue-500" />
-                  )}
-                  {activity.type === "후기 작성" && <Heart size={18} className="text-red-500" />}
-                  {activity.type === "클럽 가입" && (
-                    <UsersThree size={18} className="text-orange-500" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Badge variant="outline" className="text-xs">
-                      {activity.type}
-                    </Badge>
-                    <span className="flex items-center gap-1">
-                      <CalendarDots size={10} /> {activity.date}
+      {/* 공통 참여 클럽 */}
+      {commonClubs.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-mocha-900">
+            <UsersThree size={22} weight="duotone" className="text-coral-600" />
+            공통 참여 클럽
+          </h2>
+          <div className="space-y-2">
+            {commonClubs.map((club) => (
+              <Link key={club.id} href={`/club/${club.id}`} className="block">
+                <Card className="transition-all hover:border-coral-200 hover:shadow-soft">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-coral-50 text-2xl">
+                      {categoryEmoji(club.category)}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-base font-bold text-mocha-900">
+                      {club.name}
                     </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
 
-        {/* Joined Date */}
-        <p className="mt-4 text-center text-xs text-gray-400">{profile.joinedDate} 가입</p>
-      </section>
+function ProfileAvatar({
+  nickname,
+  avatarUrl,
+  size,
+}: {
+  nickname: string;
+  avatarUrl: string | null;
+  size: "lg";
+}) {
+  return (
+    <Avatar className={size === "lg" ? "h-20 w-20" : "h-12 w-12"}>
+      {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
+      <AvatarFallback className="text-2xl">{nickname.slice(0, 1)}</AvatarFallback>
+    </Avatar>
+  );
+}
+
+function NoticeState({ icon, title }: { icon: "withdrawn" | "unavailable"; title: string }) {
+  return (
+    <div className="p-4">
+      <Card>
+        <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cream-100 text-mocha-400">
+            {icon === "withdrawn" ? (
+              <UserMinus size={32} weight="duotone" />
+            ) : (
+              <Prohibit size={32} weight="duotone" />
+            )}
+          </div>
+          <p className="text-lg font-bold text-mocha-900">{title}</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

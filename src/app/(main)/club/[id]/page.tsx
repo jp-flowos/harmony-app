@@ -8,6 +8,7 @@ import {
   clubs,
   meetingParticipants,
   meetingRsvps,
+  profiles,
 } from "@/db/schema";
 import { requireUser } from "@/lib/auth-session";
 import { formatMeetingDate } from "@/lib/format-date";
@@ -81,6 +82,22 @@ export default async function ClubDetailPage({ params }: { params: Promise<{ id:
     )
     .orderBy(desc(clubPosts.isPinned), desc(clubPosts.publishedAt));
 
+  // 멤버: 활성 멤버만. 모임장 → 운영진 → 멤버 순, 그다음 가입순. 각 항목은 프로필로 링크.
+  const memberRows = await db
+    .select({
+      id: profiles.id,
+      nickname: profiles.nickname,
+      avatarUrl: profiles.avatarUrl,
+      role: clubMembers.role,
+    })
+    .from(clubMembers)
+    .innerJoin(profiles, eq(clubMembers.userId, profiles.id))
+    .where(and(eq(clubMembers.clubId, id), eq(clubMembers.status, "active")))
+    .orderBy(
+      sql`case ${clubMembers.role} when 'owner' then 0 when 'admin' then 1 else 2 end`,
+      asc(clubMembers.joinedAt)
+    );
+
   return (
     <ClubDetailClient
       club={{
@@ -106,6 +123,12 @@ export default async function ClubDetailPage({ params }: { params: Promise<{ id:
         imageUrl: n.imageUrls?.[0] ?? null,
         isPinned: n.isPinned,
         dateLabel: NOTICE_DATE_FMT.format(n.publishedAt),
+      }))}
+      members={memberRows.map((m) => ({
+        id: m.id,
+        nickname: m.nickname,
+        avatarUrl: m.avatarUrl,
+        role: m.role ?? "member",
       }))}
       canManageNotices={myRole === "owner" || myRole === "admin"}
       canDeleteNotices={myRole === "owner"}
