@@ -2,6 +2,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import {
+  chatRooms,
   clubMeetings,
   clubMembers,
   clubPosts,
@@ -41,6 +42,13 @@ export default async function ClubDetailPage({ params }: { params: Promise<{ id:
     .where(and(eq(clubMembers.clubId, id), eq(clubMembers.status, "active")));
 
   const myRole = membership?.status === "active" ? (membership.role ?? "member") : null;
+
+  const [clubRoom] = await db
+    .select({ id: chatRooms.id })
+    .from(chatRooms)
+    .where(and(eq(chatRooms.clubId, id), eq(chatRooms.type, "club")))
+    .limit(1);
+  const clubRoomId = clubRoom?.id ?? null;
 
   const meetingRows = await db
     .select({
@@ -134,6 +142,7 @@ export default async function ClubDetailPage({ params }: { params: Promise<{ id:
       canDeleteNotices={myRole === "owner"}
       canCreateMeeting={myRole === "owner" || myRole === "admin"}
       myRole={myRole}
+      clubRoomId={clubRoomId}
     />
   );
 }

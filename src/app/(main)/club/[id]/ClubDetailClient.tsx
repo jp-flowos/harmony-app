@@ -100,6 +100,7 @@ export function ClubDetailClient({
   canDeleteNotices,
   canCreateMeeting,
   myRole,
+  clubRoomId,
 }: {
   club: ClubInfo;
   meetings: MeetingItem[];
@@ -109,6 +110,7 @@ export function ClubDetailClient({
   canDeleteNotices: boolean;
   canCreateMeeting: boolean;
   myRole: "owner" | "admin" | "member" | null;
+  clubRoomId: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -357,9 +359,13 @@ export function ClubDetailClient({
             <div className="py-8 text-center">
               <ChatCircle size={48} className="mx-auto text-gray-300" />
               <p className="mt-3 text-base text-gray-400">클럽 채팅방</p>
-              <Button className="mt-3" onClick={() => {}}>
-                채팅 참여하기
-              </Button>
+              {joined && clubRoomId ? (
+                <Link href={`/chat/${clubRoomId}`} className="mt-3 inline-block">
+                  <Button>채팅 참여하기</Button>
+                </Link>
+              ) : (
+                <p className="mt-3 text-base text-gray-400">가입하면 채팅에 참여할 수 있어요</p>
+              )}
             </div>
           </TabsContent>
 
