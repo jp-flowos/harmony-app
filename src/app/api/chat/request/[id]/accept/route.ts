@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { db } from "@/db";
 import { chatRequests } from "@/db/schema";
@@ -47,7 +47,10 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     const fromUser = req.fromUser;
     const roomId = await db.transaction(async (tx) => {
       const rid = await findOrCreatePrivateRoom(tx, fromUser, user.id);
-      await tx.update(chatRequests).set({ status: "accepted" }).where(eq(chatRequests.id, id));
+      await tx
+        .update(chatRequests)
+        .set({ status: "accepted" })
+        .where(and(eq(chatRequests.id, id), eq(chatRequests.status, "pending")));
       return rid;
     });
 

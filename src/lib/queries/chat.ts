@@ -60,7 +60,10 @@ export async function getMyChatRooms(userId: string): Promise<ChatRoomSummary[]>
       blocked.add(b.blockerId === userId ? b.blockedId : b.blockerId);
     }
   }
-  const visible = rooms.filter((r) => !(r.otherUserId && blocked.has(r.otherUserId)));
+  // 차단 제외는 1:1(비-club) 방에만 적용 — 클럽방은 임의 co-member가 차단 대상이어도 숨기지 않는다
+  const visible = rooms.filter(
+    (r) => !(r.type !== "club" && r.otherUserId && blocked.has(r.otherUserId))
+  );
   if (visible.length === 0) return [];
 
   // 방별 최신 메시지 미리보기 + 발신자 (윈도우 함수로 한 번에)

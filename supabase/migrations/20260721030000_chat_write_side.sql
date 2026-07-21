@@ -16,7 +16,7 @@ set search_path = si_mvp, public
 as $$
 begin
   update h_chat_rooms
-    set last_message_at = new.created_at
+    set last_message_at = greatest(h_chat_rooms.last_message_at, new.created_at)
     where id = new.room_id;
   return new;
 end;
