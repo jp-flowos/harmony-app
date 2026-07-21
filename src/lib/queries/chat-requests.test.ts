@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isChatRequestActionable } from "./chat-requests";
+import { isChatRequestActionable } from "@/lib/chat/request-status";
 
 describe("isChatRequestActionable", () => {
   const now = new Date("2026-07-21T00:00:00Z");
