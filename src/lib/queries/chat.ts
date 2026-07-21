@@ -1,7 +1,7 @@
 import "server-only";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { chatRoomMembers, chatRooms, clubs } from "@/db/schema";
+import { blocks, chatRoomMembers, chatRooms, clubs } from "@/db/schema";
 
 export type ChatRoomSummary = {
   id: string;
@@ -12,8 +12,8 @@ export type ChatRoomSummary = {
   unread: boolean;
 };
 
-// 내가 속한 채팅방 목록 — 최근 메시지순. 채팅은 아직 방 생성이 연동되지 않아
-// 현재는 빈 배열을 반환하지만, 방이 생기면 그대로 실데이터를 노출한다(하드코딩 샘플 제거).
+// 내가 속한 채팅방 목록 — 최근 메시지순. 1:1 방은 상대 닉네임을 이름으로,
+// 차단 관계인 상대의 1:1 방은 제외한다.
 export async function getMyChatRooms(userId: string): Promise<ChatRoomSummary[]> {
   const rooms = await db
     .select({
@@ -23,18 +23,48 @@ export async function getMyChatRooms(userId: string): Promise<ChatRoomSummary[]>
       clubName: clubs.name,
       lastMessageAt: chatRooms.lastMessageAt,
       lastReadAt: chatRoomMembers.lastReadAt,
+      otherUserId: sql<string | null>`(
+        select m.user_id from si_mvp.h_chat_room_members m
+        where m.room_id = ${chatRooms.id} and m.user_id <> ${userId} limit 1
+      )`,
+      otherNickname: sql<string | null>`(
+        select p.nickname from si_mvp.h_chat_room_members m
+        join si_mvp.h_profiles p on p.id = m.user_id
+        where m.room_id = ${chatRooms.id} and m.user_id <> ${userId} limit 1
+      )`,
     })
     .from(chatRoomMembers)
     .innerJoin(chatRooms, eq(chatRoomMembers.roomId, chatRooms.id))
     .leftJoin(clubs, eq(chatRooms.clubId, clubs.id))
     .where(eq(chatRoomMembers.userId, userId))
-    // 메시지가 아직 없는 방(lastMessageAt=null)은 맨 아래로
     .orderBy(sql`${chatRooms.lastMessageAt} desc nulls last`);
 
   if (rooms.length === 0) return [];
 
+  // 차단 관계인 상대의 1:1 방 제외
+  const privateOthers = rooms
+    .filter((r) => r.type !== "club" && r.otherUserId)
+    .map((r) => r.otherUserId as string);
+  const blocked = new Set<string>();
+  if (privateOthers.length > 0) {
+    const blockRows = await db
+      .select({ blockerId: blocks.blockerId, blockedId: blocks.blockedId })
+      .from(blocks)
+      .where(
+        or(
+          and(eq(blocks.blockerId, userId), inArray(blocks.blockedId, privateOthers)),
+          and(eq(blocks.blockedId, userId), inArray(blocks.blockerId, privateOthers))
+        )
+      );
+    for (const b of blockRows) {
+      blocked.add(b.blockerId === userId ? b.blockedId : b.blockerId);
+    }
+  }
+  const visible = rooms.filter((r) => !(r.otherUserId && blocked.has(r.otherUserId)));
+  if (visible.length === 0) return [];
+
   // 방별 최신 메시지 미리보기 + 발신자 (윈도우 함수로 한 번에)
-  const ids = rooms.map((r) => r.id);
+  const ids = visible.map((r) => r.id);
   const previews = await db.execute(sql`
     select room_id, content, sender_id
     from (
@@ -60,9 +90,9 @@ export async function getMyChatRooms(userId: string): Promise<ChatRoomSummary[]>
     lastSenderByRoom.set(row.room_id, row.sender_id);
   }
 
-  return rooms.map((r) => ({
+  return visible.map((r) => ({
     id: r.id,
-    name: r.name ?? r.clubName ?? "채팅방",
+    name: r.name ?? r.clubName ?? r.otherNickname ?? "채팅방",
     type: r.type,
     lastMessage: previewByRoom.get(r.id) ?? "",
     lastMessageAt: r.lastMessageAt ?? null,
