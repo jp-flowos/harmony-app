@@ -8,6 +8,7 @@ import {
   unauthorizedError,
   validationError,
 } from "@/lib/api-response";
+import { addRoomMember, ensureClubRoom } from "@/lib/chat/rooms";
 import { parseClubFilters } from "@/lib/club-filters";
 import { queryClubs } from "@/lib/queries/clubs";
 import { REGIONS } from "@/lib/regions";
@@ -120,6 +121,8 @@ export async function POST(request: NextRequest) {
         })
         .returning();
       await tx.insert(clubMembers).values({ clubId, userId: user.id, role: "owner" });
+      const roomId = await ensureClubRoom(tx, clubId, club.name);
+      await addRoomMember(tx, roomId, user.id);
       return club;
     });
 

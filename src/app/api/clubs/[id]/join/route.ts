@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { db } from "@/db";
-import { clubMembers, clubs } from "@/db/schema";
+import { chatRooms, clubMembers, clubs } from "@/db/schema";
 import {
   errorResponse,
   forbiddenError,
@@ -10,6 +10,7 @@ import {
   successResponse,
   unauthorizedError,
 } from "@/lib/api-response";
+import { addRoomMember, ensureClubRoom, removeRoomMember } from "@/lib/chat/rooms";
 import { createClient } from "@/lib/supabase/server";
 
 // 활성 회원 수를 truth에서 재계산해 clubs.memberCount에 반영 (onboarding/recommendation 소비처용)
@@ -28,7 +29,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
   try {
     const [club] = await db
-      .select({ id: clubs.id, joinType: clubs.joinType })
+      .select({ id: clubs.id, joinType: clubs.joinType, name: clubs.name })
       .from(clubs)
       .where(eq(clubs.id, id))
       .limit(1);
@@ -61,6 +62,8 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         .update(clubs)
         .set({ memberCount: activeMemberCount(id) })
         .where(eq(clubs.id, id));
+      const roomId = await ensureClubRoom(tx, id, club.name);
+      await addRoomMember(tx, roomId, user.id);
     });
 
     return successResponse({ joined: true }, 201);
@@ -105,6 +108,12 @@ export async function DELETE(
         .update(clubs)
         .set({ memberCount: activeMemberCount(id) })
         .where(eq(clubs.id, id));
+      const [room] = await tx
+        .select({ id: chatRooms.id })
+        .from(chatRooms)
+        .where(and(eq(chatRooms.clubId, id), eq(chatRooms.type, "club")))
+        .limit(1);
+      if (room) await removeRoomMember(tx, room.id, user.id);
     });
 
     return successResponse({ left: true });
