@@ -1,4 +1,5 @@
 import { getMyChatRooms } from "@/lib/queries/chat";
+import { getReceivedChatRequests } from "@/lib/queries/chat-requests";
 import { createClient } from "@/lib/supabase/server";
 import { ChatListClient } from "./ChatListClient";
 
@@ -8,7 +9,14 @@ export default async function ChatListPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const rooms = user ? await getMyChatRooms(user.id) : [];
+  if (!user) {
+    return <ChatListClient rooms={[]} receivedRequests={[]} />;
+  }
 
-  return <ChatListClient rooms={rooms} />;
+  const [rooms, receivedRequests] = await Promise.all([
+    getMyChatRooms(user.id),
+    getReceivedChatRequests(user.id),
+  ]);
+
+  return <ChatListClient rooms={rooms} receivedRequests={receivedRequests} />;
 }

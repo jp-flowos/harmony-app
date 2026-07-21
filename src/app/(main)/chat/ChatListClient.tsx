@@ -2,15 +2,18 @@
 
 import { MagnifyingGlass, UserCircle, UsersThree } from "@phosphor-icons/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { relativeTimeLabel } from "@/lib/format-date";
 import type { ChatRoomSummary } from "@/lib/queries/chat";
+import type { ReceivedChatRequest } from "@/lib/queries/chat-requests";
 
 function ChatRoomCard({ room }: { room: ChatRoomSummary }) {
   return (
@@ -46,8 +49,44 @@ function ChatRoomCard({ room }: { room: ChatRoomSummary }) {
   );
 }
 
-export function ChatListClient({ rooms }: { rooms: ChatRoomSummary[] }) {
+export function ChatListClient({
+  rooms,
+  receivedRequests,
+}: {
+  rooms: ChatRoomSummary[];
+  receivedRequests: ReceivedChatRequest[];
+}) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
+  const [requests, setRequests] = useState(receivedRequests);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const handleAccept = async (requestId: string) => {
+    setBusyId(requestId);
+    try {
+      const res = await fetch(`/api/chat/request/${requestId}/accept`, { method: "POST" });
+      const payload = (await res.json().catch(() => null)) as
+        | { success?: boolean; data?: { roomId?: string } }
+        | null;
+      if (res.ok && payload?.data?.roomId) {
+        router.push(`/chat/${payload.data.roomId}`);
+        return;
+      }
+      setRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleReject = async (requestId: string) => {
+    setBusyId(requestId);
+    try {
+      await fetch(`/api/chat/request/${requestId}/reject`, { method: "POST" });
+      setRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const filterRooms = (list: ChatRoomSummary[]) =>
     list.filter((r) => !search || r.name.includes(search) || r.lastMessage.includes(search));
@@ -91,6 +130,40 @@ export function ChatListClient({ rooms }: { rooms: ChatRoomSummary[] }) {
         </TabsContent>
 
         <TabsContent value="private" className="space-y-3">
+          {requests.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="px-1 text-base font-bold text-mocha-700">받은 채팅 요청</h2>
+              {requests.map((r) => (
+                <Card key={r.requestId}>
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarFallback className="text-xl">{r.nickname[0] ?? "💬"}</AvatarFallback>
+                    </Avatar>
+                    <p className="flex-1 min-w-0 truncate text-lg font-bold text-mocha-900">
+                      {r.nickname}
+                    </p>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleAccept(r.requestId)}
+                        disabled={busyId === r.requestId}
+                      >
+                        수락
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleReject(r.requestId)}
+                        disabled={busyId === r.requestId}
+                      >
+                        거절
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
           {privateRooms.length === 0 ? (
             <EmptyState
               icon="chat"
