@@ -5,6 +5,7 @@ import {
   Eye,
   Fire,
   Heart,
+  Megaphone,
   Newspaper,
   Sparkle,
   UserCirclePlus,
@@ -34,6 +35,8 @@ import {
 } from "@/lib/fortune";
 import {
   getHealthOneLiner,
+  getMyClubNotices,
+  getMyClubs,
   getMyNextMeetings,
   getPopularCommunityPosts,
   getPopularUpcomingMeetings,
@@ -90,13 +93,17 @@ export default async function HomePage() {
     myHobbies = hobbyRows.map((h) => h.category);
   }
 
-  const [nextMeetings, popularMeetings, infos, posts, health] = await Promise.all([
-    user ? getMyNextMeetings(user.id) : Promise.resolve([]),
-    getPopularUpcomingMeetings(),
-    getRecommendedInfos(),
-    getPopularCommunityPosts(),
-    getHealthOneLiner(kstDateString()),
-  ]);
+  const [nextMeetings, myClubs, notices, popularMeetings, infos, posts, health] = await Promise.all(
+    [
+      user ? getMyNextMeetings(user.id) : Promise.resolve([]),
+      user ? getMyClubs(user.id) : Promise.resolve([]),
+      user ? getMyClubNotices(user.id) : Promise.resolve([]),
+      getPopularUpcomingMeetings(),
+      getRecommendedInfos(),
+      getPopularCommunityPosts(),
+      getHealthOneLiner(kstDateString()),
+    ]
+  );
 
   // 개인화 추천 클럽 (기존 로직 유지 — 콘텐츠 기반, 협업 필터는 members 비워 스킵)
   const candidateClubs = await db
@@ -221,6 +228,66 @@ export default async function HomePage() {
             </CardContent>
           </Card>
         </Link>
+      )}
+
+      {/* 내 클럽 (가입한 클럽 실데이터 — 없으면 섹션 숨김) */}
+      {myClubs.length > 0 && (
+        <Section
+          icon={<UsersThree size={26} weight="duotone" className="text-coral-600" />}
+          title="내 클럽"
+          href="/club?tab=mine"
+        >
+          <div className="-mx-5 overflow-x-auto pb-2">
+            <div className="flex gap-3 px-5">
+              {myClubs.map((club) => (
+                <Link key={club.id} href={`/club/${club.id}`} className="block w-40 shrink-0">
+                  <Card className="h-full transition-all hover:border-coral-200 hover:shadow-soft">
+                    <CardContent className="flex flex-col gap-2 p-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-coral-50 text-2xl">
+                        {categoryEmoji(club.category)}
+                      </div>
+                      <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-extrabold text-mocha-900 leading-snug">
+                        {club.name}
+                      </h3>
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-mocha-600">
+                        <UsersThree size={16} weight="duotone" />
+                        {club.memberCount}
+                      </span>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {/* 클럽 공지 (내 가입 클럽의 notice 실데이터 — 없으면 섹션 숨김) */}
+      {notices.length > 0 && (
+        <Section
+          icon={<Megaphone size={26} weight="duotone" className="text-coral-600" />}
+          title="클럽 공지"
+        >
+          <div className="space-y-3">
+            {notices.map((notice) => (
+              <Link key={notice.id} href={`/club/${notice.clubId}`} className="block">
+                <Card className="transition-all hover:border-coral-200 hover:shadow-soft">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{notice.clubName}</Badge>
+                      <span className="text-sm font-semibold text-mocha-500">
+                        {relativeTimeLabel(notice.createdAt)}
+                      </span>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-base font-medium text-mocha-800 leading-snug">
+                      {notice.title ?? notice.content}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </Section>
       )}
 
       {/* 신규 유저 위젯 (기존 W1 장치 — 히어로 아래 유지) */}
@@ -400,7 +467,7 @@ function Section({
 }: {
   icon: React.ReactNode;
   title: string;
-  href: string;
+  href?: string;
   hint?: string;
   children: React.ReactNode;
 }) {
@@ -411,13 +478,15 @@ function Section({
           <span className="self-center">{icon}</span>
           {title}
         </h2>
-        <Link
-          href={href}
-          className="inline-flex items-center gap-0.5 text-base font-bold text-coral-700 hover:text-coral-800"
-        >
-          더보기
-          <ArrowRight size={18} weight="bold" />
-        </Link>
+        {href && (
+          <Link
+            href={href}
+            className="inline-flex items-center gap-0.5 text-base font-bold text-coral-700 hover:text-coral-800"
+          >
+            더보기
+            <ArrowRight size={18} weight="bold" />
+          </Link>
+        )}
       </div>
       {hint && <p className="text-sm text-mocha-500">{hint}</p>}
       {children}

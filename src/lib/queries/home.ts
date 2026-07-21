@@ -3,6 +3,8 @@ import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   clubMeetings,
+  clubMembers,
+  clubPosts,
   clubs,
   communityPosts,
   infoContents,
@@ -68,6 +70,7 @@ const HEALTH_TIPS = [
 const HERO_LIMIT = 3;
 const POPULAR_LIMIT = 5;
 const LIST_LIMIT = 3;
+const MY_CLUB_LIMIT = 6;
 const AVATAR_LIMIT = 3;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -99,6 +102,72 @@ export async function getMyNextMeetings(
     .orderBy(clubMeetings.date)
     .limit(limit);
   return rows.map((r) => ({ ...r, clubId: r.clubId ?? "" }));
+}
+
+export type HomeMyClub = {
+  id: string;
+  name: string;
+  category: string;
+  memberCount: number;
+};
+
+// 내가 가입한(active) 클럽 — 최근 가입순. 홈 "내 클럽" 섹션 (실데이터, 없으면 섹션 숨김)
+export async function getMyClubs(userId: string, limit = MY_CLUB_LIMIT): Promise<HomeMyClub[]> {
+  const rows = await db
+    .select({
+      id: clubs.id,
+      name: clubs.name,
+      category: clubs.category,
+      memberCount: clubs.memberCount,
+    })
+    .from(clubMembers)
+    .innerJoin(clubs, eq(clubMembers.clubId, clubs.id))
+    .where(and(eq(clubMembers.userId, userId), eq(clubMembers.status, "active")))
+    .orderBy(desc(clubMembers.joinedAt))
+    .limit(limit);
+  return rows.map((r) => ({ ...r, memberCount: r.memberCount ?? 0 }));
+}
+
+export type HomeNotice = {
+  id: string;
+  clubId: string;
+  clubName: string;
+  title: string | null;
+  content: string;
+  createdAt: Date;
+};
+
+// 내가 가입한 클럽의 공지(notice)글 — 홈 "클럽 공지" 섹션. 클럽 상세와 동일하게 중요 먼저·최신 게시일순.
+export async function getMyClubNotices(userId: string, limit = LIST_LIMIT): Promise<HomeNotice[]> {
+  const rows = await db
+    .select({
+      id: clubPosts.id,
+      clubId: clubPosts.clubId,
+      clubName: clubs.name,
+      title: clubPosts.title,
+      content: clubPosts.content,
+      createdAt: clubPosts.createdAt,
+    })
+    .from(clubPosts)
+    .innerJoin(
+      clubMembers,
+      and(
+        eq(clubMembers.clubId, clubPosts.clubId),
+        eq(clubMembers.userId, userId),
+        eq(clubMembers.status, "active")
+      )
+    )
+    .innerJoin(clubs, eq(clubPosts.clubId, clubs.id))
+    // is_hidden 이 명시적 NULL 로 들어온 공지도 숨김 처리하지 않도록 IS NOT TRUE 로 판정
+    .where(and(eq(clubPosts.type, "notice"), sql`${clubPosts.isHidden} is not true`))
+    .orderBy(desc(clubPosts.isPinned), desc(clubPosts.publishedAt))
+    .limit(limit);
+  return rows.map((r) => ({
+    ...r,
+    clubId: r.clubId ?? "",
+    clubName: r.clubName ?? "클럽",
+    createdAt: r.createdAt ?? new Date(),
+  }));
 }
 
 const joinedCountSql = sql<number>`(
