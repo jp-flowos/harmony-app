@@ -1,10 +1,10 @@
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChatRoom } from "@/components/chat/ChatRoom";
 import { db } from "@/db";
-import { profiles } from "@/db/schema";
+import { chatRoomMembers, profiles } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 
 interface ChatDetailPageProps {
@@ -25,6 +25,18 @@ export default async function ChatDetailPage({ params }: ChatDetailPageProps) {
     .from(profiles)
     .where(eq(profiles.id, user.id))
     .limit(1);
+
+  const [membership] = await db
+    .select({ userId: chatRoomMembers.userId })
+    .from(chatRoomMembers)
+    .where(and(eq(chatRoomMembers.roomId, id), eq(chatRoomMembers.userId, user.id)))
+    .limit(1);
+  if (!membership) redirect("/chat");
+
+  await db
+    .update(chatRoomMembers)
+    .set({ lastReadAt: new Date() })
+    .where(and(eq(chatRoomMembers.roomId, id), eq(chatRoomMembers.userId, user.id)));
 
   return (
     <div className="flex h-[calc(100vh-5rem)] flex-col">
